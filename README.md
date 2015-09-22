@@ -10,6 +10,8 @@ Teensy GPS Shield is a "work in progress" and is currently not ready for out of 
 
 These 4 features provide the essential data needed in many real world applications including RC aircraft, RC cars, UAVs, automotive racing, motor-cross and various other hobby and professional fields.  In addition, having sufficient flexibility built into the data logging application would provide a system that could be useful for scientific studies such as measuring sea ice drift and at the same time being cost effective for the general hobbyist to use in RC vehicles.
 
+![TeensyGPS](http://www.smokingresistor.com/wp-content/uploads/2015/09/IMG_0001.jpg)
+
 ###GPS Receiver
 The GPS receiver is based around the SkyTraq [Venus838FLPX](http://www.smokingresistor.com/wp-content/uploads/2014/06/Venus838FLPx_DS_v4.pdf) receiver chip which is capable of positon update rates of 50Hz.  Configuration of the GPS receiver is achieved through serial commands that will be transmitted from the Teensy microcontroller via serial pins 9 & 10.
 
