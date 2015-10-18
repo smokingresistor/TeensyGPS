@@ -25,6 +25,6 @@ The data from the GPS Receiver and 9DOF sensor get recorded to an onboard MicroS
 The Teensy uses the [FlexCAN](https://github.com/teachop/FlexCAN_Library) library to communicate to a CAN bus transceiver chip which is part number [SN65HVD232DR](http://www.ti.com/lit/ds/symlink/sn65hvd230.pdf) by Texas Instruments.  The CAN bus interface is a DSUB 9 pin connector which is standard in most automotive CAN bus applications.
 
 ###Optional Kalman Filtering
-Due to the inaccuracies of commercial GPS position data, the 50 Hz max data rate from the GPS receiver tends to be very noisy.  To overcome this noisy GPS data, a Kalman filter is being added. The Kalman filter library for the Arduino platform is available and found [here](https://github.com/TKJElectronics/KalmanFilter).
+Due to the inaccuracies of commercial GPS position data, the 50 Hz max data rate from the GPS receiver tends to be very noisy.  To overcome this noisy GPS data, a Kalman filter is being added.
 
 

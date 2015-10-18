@@ -3,6 +3,7 @@
 #include "BMsg838.h"
 #include "KalmanFilter.h"
 #include "GPSSerialMessageCom.h"
+#include "Adafruit_LSM9DS0.h"
 #include <SPI.h>
 #include <SD.h>
 #include <FlexCAN.h>
