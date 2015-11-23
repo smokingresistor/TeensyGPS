@@ -6,16 +6,16 @@
 #include "KalmanFilter.h"
 
 /*Kalman Filter class Structor*/
-KalmanFi1ter::KalmanFi1ter()     
+KalmanFilter::KalmanFilter()     
 
 {
-  	i = 1;
+  //i = 1;
 	cosLat = 0.0;  
 	Rearth = 6378137;
 	
 }
 /*Kalman Filter class Destroier*/
-KalmanFi1ter::~KalmanFi1ter()
+KalmanFilter::~KalmanFilter()
 {
 
 }
@@ -27,20 +27,24 @@ KalmanFi1ter::~KalmanFi1ter()
 			   lon-> Position data2
 	filtered data->GPS_data:
 */
-int64_t* KalmanFi1ter::KalmanProcessing(int64_t lat, int64_t lon){
+int64_t* KalmanFilter::KalmanProcessing(int64_t lat, int64_t lon){
 	 time = millis();
          prevGPS_data[0][0] = GPS_data[0][0];
          prevGPS_data[0][1] = GPS_data[0][1];
          prevGPS_data[0][2] = GPS_data[0][2];
          GPS_data[0][0] = lat;
          GPS_data[0][1] = lon;
-         GPS_data[0][2] = (uint64_t) time;       
-
-          if (i == 1){ //Initialize cosLat            
+         GPS_data[0][2] = (uint64_t) time;
+         
+          //if (i != 100){ //Initialize cosLat      
+          Serial.print("\r\n ==================FirstLat: "); Serial.print((float)firstGPS_data[0][0]); Serial.print(" FirstLon: "); Serial.println((float)firstGPS_data[0][1]);        
+          if (((firstGPS_data[0][0] == GPS_data[0][0])&&(firstGPS_data[0][1] == GPS_data[0][1]))||((firstGPS_data[0][0] == 0)&&(firstGPS_data[0][1] == 0))){
+            Serial.println("\r\n INIT FIRST!!! ===========================================");
             firstGPS_data[0][0] = GPS_data[0][0];
             firstGPS_data[0][1] = GPS_data[0][1];
             firstGPS_data[0][2] = GPS_data[0][2]; 
-            cosLat = cos((float) firstGPS_data[0][0]/10000000*pi/180);     
+            cosLat = cos((float) firstGPS_data[0][0]/10000000*pi/180);   
+              i = 100;
           }              
           delta_T = ((float) (GPS_data[0][2] - prevGPS_data[0][2])) / 1000; //Time elapsed in seconds
           float Amatrix[4][4] = {
@@ -119,8 +123,12 @@ int64_t* KalmanFi1ter::KalmanProcessing(int64_t lat, int64_t lon){
           }
           Matrix.Multiply((float*) PerrorCovarianceEstimate, (float*) HmatrixTranspose, 4,4,2, (float*) IntermediateQuotientMatrix);
           Matrix.Multiply((float*) IntermediateQuotientMatrix, (float*) IntermediateSumMatrix2, 4,2,2, (float*) KalmanGain);
-          data[0] = (float) (GPS_data[0][0]-firstGPS_data[0][0])*pi/180*Rearth/10000000;
-          data[1] = (float) (GPS_data[0][1]-firstGPS_data[0][1])*pi/180*Rearth*cosLat/10000000;     
+          data[0] = (float) (GPS_data[0][0]);///10000000.0;//-firstGPS_data[0][0]/10000000.0);//10000000.0;//*pi/180*Rearth/10000000.0;
+          data[1] = (float) (GPS_data[0][1]);///10000000.0;//-firstGPS_data[0][1]/10000000.0);///10000000.0;//*pi/180*Rearth*cosLat/10000000.0; 
+          Serial.print("\r\n i: "); Serial.print(i); 
+          Serial.print("\r\n FirstLat: "); Serial.print((float)firstGPS_data[0][0]); Serial.print(" FirstLon: "); Serial.println((float)firstGPS_data[0][1]);  
+          Serial.print("\r\n LstLat: "); Serial.print((float)GPS_data[0][0]); Serial.print(" LastLon: "); Serial.println((float)GPS_data[0][1]); 
+          Serial.print("\r\n Lat: "); Serial.print(data[0]); Serial.print(" Lon: "); Serial.println(data[1]);
           float ZkTranspose[2][1] = { //We only need the transposed version of this, so we do it right here.
                 {data[0]},
                 {data[1]},
@@ -153,8 +161,12 @@ int64_t* KalmanFi1ter::KalmanProcessing(int64_t lat, int64_t lon){
           };
           Matrix.Subtract((float*) IdentityMatrix, (float*) IntermediateProductMatrix, 4,4, (float*) IntermediateQuotientMatrix); //Reuse this intermediate matrix because it's 4x4 and we need 4x4.
           Matrix.Multiply((float*) IntermediateQuotientMatrix, (float*) PerrorCovarianceEstimate, 4,4,4, (float*) PerrorCovariance);              
-
-          i = i + 1; 
+          Matrix.Print((float*) Xstate, 4, 1, "Xstate Update: ");
+          Matrix.Print((float*) ZkTranspose, 2, 1, "ZK transpose: ");
+          Matrix.Print((float*) nextXstateEstimate, 4, 1, "Next X State Estimate: ");
+          //i = i + 1; 
+          GPS_data[0][0] = Xstate[0][0];
+          GPS_data[0][1] = Xstate[1][0];
           return GPS_data[0];
         
 }

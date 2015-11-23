@@ -3,7 +3,7 @@
 #include "BMsg838.h"
 #include "KalmanFilter.h"
 #include "GPSSerialMessageCom.h"
-#include <Adafruit_LSM9DS0.h>
+//#include <Adafruit_LSM9DS0.h>
 #include <Adafruit_Sensor.h>
 #include <Wire.h>
 #include <SPI.h>
@@ -28,7 +28,7 @@ FlexCAN CANbus(500000);
 BMsg838 gps;
 
 /*kalman filter class*/
-KalmanFi1ter filter;
+KalmanFilter filter;
 union conv lat, lon, alt, vel;
 int fileNum = 10000; 
 char namefile[13]="GPS10000.TXT";
@@ -37,6 +37,7 @@ int mosi = 7;
 int miso = 8;
 int sck = 14;
 int led = 13;
+
 const byte id_lat=0x001;
 const byte id_lon=0x002;
 const byte id_alt=0x003;
@@ -170,9 +171,9 @@ void loop()
            // t1=millis();
            ret=waitingRespondandReceive(gps.RecVBinarybuf,0xA8,2000); 
            if(ret>7){                
-                 if(!GPSNavigationMsgProcessing(&(gps.venus838data_raw),&(gps.venus838data_filter),gps,filter))
+                 if(!GPSNavigationMsgProcessing(&(gps.venus838data_raw),&(gps.venus838data_filter),gps,&filter))
                  {
-                       Serial.println("Checksum error has been occured\n");
+                       Serial.println("\r\nChecksum error has occured");
                        checksums++;
                   }    
                 /*
@@ -272,7 +273,7 @@ void loop()
                           }
 
                 
-                /*
+                
                 Serial.println("filtered data:\n");                
                 printpositionfloatformat(gps.venus838data_filter.Latitude, 10000000, "  Latitude= ", "degree");
                 printpositionfloatformat(gps.venus838data_filter.Longitude, 10000000, "  Longitude= ", "degree");
@@ -285,20 +286,20 @@ void loop()
                 printpositionfloatformat(gps.venus838data_raw.SealevelAltitude, 100, "  SealevelAltitude= ", "meter");
                 printpositionfloatformat(gps.venus838data_raw.velocity, 100, "  velocity= ", "meter/second");
                 
-                Serial.println("Added data:\n");
-                const String fixmodmask[]={"no fix", "2D", "3D", "3D+DGNSS"};
-                Serial.println("fixmode=");
-                Serial.println(fixmodmask[gps.venus838data_raw.fixmode]);
-                Serial.println("NumSV=");
-                Serial.println(gps.venus838data_raw.NumSV);
+                //Serial.println("Added data:\n");
+                //const String fixmodmask[]={"no fix", "2D", "3D", "3D+DGNSS"};
+                //Serial.println("fixmode=");
+                //Serial.println(fixmodmask[gps.venus838data_raw.fixmode]);
+                //Serial.println("NumSV=");
+                //Serial.println(gps.venus838data_raw.NumSV);
              
-                printpositionfloatformat(gps.venus838data_raw.GDOP, 100, "  GDOP= ", "");
-                printpositionfloatformat(gps.venus838data_raw.PDOP, 100, "  PDOP= ", "");
-                printpositionfloatformat(gps.venus838data_raw.HDOP, 100, "  HDOP= ", "");
-                printpositionfloatformat(gps.venus838data_raw.VDOP, 100, "  VDOP= ", "");
-                printpositionfloatformat(gps.venus838data_raw.TDOP, 100, "  TDOP= ", "");
+                //printpositionfloatformat(gps.venus838data_raw.GDOP, 100, "  GDOP= ", "");
+                //printpositionfloatformat(gps.venus838data_raw.PDOP, 100, "  PDOP= ", "");
+                //printpositionfloatformat(gps.venus838data_raw.HDOP, 100, "  HDOP= ", "");
+                //printpositionfloatformat(gps.venus838data_raw.VDOP, 100, "  VDOP= ", "");
+                //printpositionfloatformat(gps.venus838data_raw.TDOP, 100, "  TDOP= ", "");
 
-                */
+                delay(100);
                 
                  
            }else

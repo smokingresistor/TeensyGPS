@@ -6,20 +6,20 @@
 #include "MatrixMath.h"
 #include "math.h"
 
-class KalmanFi1ter
+class KalmanFilter
 {
 	public:
-		KalmanFi1ter();
-		~KalmanFi1ter();
+		KalmanFilter();
+		~KalmanFilter();
 		unsigned long time;
-		int i = 1;
+		int i;
 		float pi = 3.1415926;
 		float cosLat ;  
 		
 		int64_t Rearth ;
 		float RcovarianceMatrix[2][2] = {
-	         {2.21017383364137, 3.51637078682249},
-	         {3.51637078682249, 13.8032720993553},
+	         {0.00002210173, 0.00003516370},
+	         {0.00003516370, 0.00001380327},
 	  };
 		
 		float QcovarianceMatrix[4][4]= {
@@ -55,18 +55,18 @@ class KalmanFi1ter
 		int64_t GPS_data[1][3] = {
 	        {0,0,0},
 	};
-		
-		int64_t prevGPS_data[1][3] = {
-	        {0,0,0},
-	};
-		int64_t firstGPS_data[1][3] = {
-	        {0,0,0},
-	};
+	 
+      int64_t prevGPS_data[1][3] = {
+          {0,0,0},
+  };
+    int64_t firstGPS_data[1][3] = {
+          {0,0,0},
+  };	
+
 	
 	
 	
 		int64_t* KalmanProcessing(int64_t lat, int64_t lon);
-	private:
-	
+ private:
 };
 #endif

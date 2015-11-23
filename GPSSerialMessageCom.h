@@ -15,5 +15,5 @@ void printpositionfloatformat(float a, int decimalscale, const char * mark, cons
 int waitingRespondandReceive(byte *buf, byte messageid, unsigned int timeout);
 int SendBinaryMessagetoGPSreceiver(int streamsize, byte* sendbuf, byte* receivebuf, byte messageid, int timeout);
 int BinaryRecvMsgtype(const char *MsgInfo,byte* receivebuf);
-int GPSNavigationMsgProcessing(NavGPSdata *filterbeforedata, NavGPSdata *filterafterdata,BMsg838 gps,KalmanFi1ter filter);
+int GPSNavigationMsgProcessing(NavGPSdata *filterbeforedata, NavGPSdata *filterafterdata,BMsg838 gps,KalmanFilter *filter);
 #endif

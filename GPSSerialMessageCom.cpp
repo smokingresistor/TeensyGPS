@@ -155,7 +155,7 @@ int SendBinaryMessagetoGPSreceiver(int streamsize, byte* sendbuf, byte* receiveb
 /*Receive GPS Navigation binary messat and input into parameter1 and after kalman filtering,
     Insert filtered data into parmeter2 
 */
-int GPSNavigationMsgProcessing(NavGPSdata *filterbeforedata, NavGPSdata *filterafterdata,BMsg838 gps,KalmanFi1ter filter){
+int GPSNavigationMsgProcessing(NavGPSdata *filterbeforedata, NavGPSdata *filterafterdata,BMsg838 gps,KalmanFilter *filter){
       int ret;
       //GPS interface variabes
       uint8_t modenum[2];
@@ -184,7 +184,7 @@ int GPSNavigationMsgProcessing(NavGPSdata *filterbeforedata, NavGPSdata *filtera
             filterbeforedata->VDOP=(float)array_dilution[3]/100.0;
             filterbeforedata->TDOP=(float)array_dilution[4]/100.0;
               
-            filterdata=filter.KalmanProcessing((int64_t)array_position[0], (int64_t)array_position[1]);
+            filterdata=filter->KalmanProcessing((int64_t)array_position[0], (int64_t)array_position[1]);
             filterafterdata->Latitude=(float)filterdata[0]/10000000.0;
             filterafterdata->Longitude=(float)filterdata[1]/10000000.0;
             filterafterdata->receivedtime=(float)filterdata[2];
@@ -192,10 +192,10 @@ int GPSNavigationMsgProcessing(NavGPSdata *filterbeforedata, NavGPSdata *filtera
             for(int k=0;k<3;k++)
                 long_velocity+=(array_veolcity[k]*array_veolcity[k]);
             long_velocity=sqrt(long_velocity);
-            filterbeforedata->velocity=(float)long_velocity/100.0;
-            filterdata=filter.KalmanProcessing((int64_t)array_altitude[1], (int64_t)long_velocity);
-            filterafterdata->SealevelAltitude=(float)filterdata[0]/100.0;
-            filterafterdata->velocity=(float)filterdata[1]/100.0;
+            //filterbeforedata->velocity=(float)long_velocity/100.0;
+            //filterdata=filter.KalmanProcessing((int64_t)array_altitude[1], (int64_t)long_velocity);
+            //filterafterdata->SealevelAltitude=(float)filterdata[0]/100.0;
+            //filterafterdata->velocity=(float)filterdata[1]/100.0;
             return 1;        
             
         }
