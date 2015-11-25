@@ -122,22 +122,23 @@ void setup()
   memset(messagetype,0,64);
   Serial.print("Testing BMsg838 binary message library v. "); 
   Serial.println();
-  // Serial.print(" BMsg838 System reset.\r\n"); 
-  // SendBinaryMessagetoGPSreceiver(gps.ResetGNSS(1, 15, 6, 9,11, 30, 25, 20, 133, 1200), gps.SendStream,gps.RecVBinarybuf,0,2000);
-  SendBinaryMessagetoGPSreceiver(gps.SetSerialPort(115200, 1), gps.SendStream,gps.RecVBinarybuf,0,2000);
-  SendBinaryMessagetoGPSreceiver(gps.SetBinaryMessagetype(), gps.SendStream,gps.RecVBinarybuf,0,2000); 
-  SendBinaryMessagetoGPSreceiver(gps.SetPositionRate(50), gps.SendStream,gps.RecVBinarybuf,0,2000);
-  if(SendBinaryMessagetoGPSreceiver(gps.GetSoftVersion(), gps.SendStream,gps.RecVBinarybuf,0,2000)==3);
-      if(waitingRespondandReceive(gps.RecVBinarybuf,0x80,2000)>7){
-              BinaryRecvMsgtype(messagetype,gps.RecVBinarybuf);
-              Serial.println(messagetype); 
-              GPSSoftVersiondata* versioninfo=gps.ResponseSoftVersion();
-              printSoftversion(versioninfo);        
-      }
-  
-  Serial.println("-------------------------------------------------------------------------------------------------------------------------------------");
-  Serial.println("Received_time;Latitude;Logitude;Altitude;Velocity;Latitude_fil;Logitude_fil;Altitude_fil;Velocity_fil;fix_mode;sat_num;checksums");
-  Serial.println("-------------------------------------------------------------------------------------------------------------------------------------");
+//  Serial.print(" BMsg838 System reset.\r\n"); 
+//  SendBinaryMessagetoGPSreceiver(gps.ResetGNSS(1, 15, 6, 9,11, 30, 25, 20, 133, 1200), gps.SendStream,gps.RecVBinarybuf,0,2000);
+//  SendBinaryMessagetoGPSreceiver(gps.SetSerialPort(115200, 1), gps.SendStream,gps.RecVBinarybuf,0,2000);
+//  SendBinaryMessagetoGPSreceiver(gps.SetBinaryMessagetype(), gps.SendStream,gps.RecVBinarybuf,0,2000); 
+//  SendBinaryMessagetoGPSreceiver(gps.SetPositionRate(50), gps.SendStream,gps.RecVBinarybuf,0,2000);
+//  if(SendBinaryMessagetoGPSreceiver(gps.GetSoftVersion(), gps.SendStream,gps.RecVBinarybuf,0,2000)==3);
+//      if(waitingRespondandReceive(gps.RecVBinarybuf,0x80,2000)>7){
+//              BinaryRecvMsgtype(messagetype,gps.RecVBinarybuf);
+//              Serial.println("Here it is"); 
+//              Serial.println(messagetype); 
+//              GPSSoftVersiondata* versioninfo=gps.ResponseSoftVersion();
+//              printSoftversion(versioninfo);        
+//      }
+//  
+//  Serial.println("-------------------------------------------------------------------------------------------------------------------------------------");
+//  Serial.println("Received_time;Latitude;Longitude;Altitude;Velocity;Latitude_fil;Longitude_fil;Altitude_fil;Velocity_fil;fix_mode;sat_num;checksums");
+//  Serial.println("-------------------------------------------------------------------------------------------------------------------------------------");
 
     if (sd_datalog==1) 
       {
@@ -274,17 +275,18 @@ void loop()
 
                 
                 
-                Serial.println("filtered data:\n");                
-                printpositionfloatformat(gps.venus838data_filter.Latitude, 10000000, "  Latitude= ", "degree");
-                printpositionfloatformat(gps.venus838data_filter.Longitude, 10000000, "  Longitude= ", "degree");
-                printpositionfloatformat(gps.venus838data_filter.SealevelAltitude, 100, "  SealevelAltitude= ", "meter");
-                printpositionfloatformat(gps.venus838data_filter.velocity, 100, "  velocity= ", "meter/second");
-                printpositionfloatformat(gps.venus838data_filter.receivedtime, 1, "  receivedtime= ", "second");
-                Serial.println("raw data:\n");
-                printpositionfloatformat(gps.venus838data_raw.Latitude, 10000000, "  Latitude= ", "degree");
-                printpositionfloatformat(gps.venus838data_raw.Longitude, 10000000, "  Longitude= ", "degree");
-                printpositionfloatformat(gps.venus838data_raw.SealevelAltitude, 100, "  SealevelAltitude= ", "meter");
-                printpositionfloatformat(gps.venus838data_raw.velocity, 100, "  velocity= ", "meter/second");
+                //Serial.println("filtered data:");                
+                printpositionfloatformat(gps.venus838data_filter.Latitude, 10000000, "Latitude_Filt= ", "; ");
+                printpositionfloatformat(gps.venus838data_filter.Longitude, 10000000, "Longitude_Filt= ", "; ");
+                printpositionfloatformat(gps.venus838data_filter.SealevelAltitude, 100, "Altitude_Filt= ", " meters; ");
+                printpositionfloatformat(gps.venus838data_filter.velocity, 100, "Velocity_Filt= ", " m/s; ");
+                printpositionfloatformat(gps.venus838data_filter.receivedtime, 1, "Receivedtime= ", "; ");
+                Serial.println("");
+                //Serial.println("\nraw data:");
+                printpositionfloatformat(gps.venus838data_raw.Latitude, 10000000, "Latitude_Raw= ", "; ");
+                printpositionfloatformat(gps.venus838data_raw.Longitude, 10000000, "Longitude_Raw= ", "; ");
+                printpositionfloatformat(gps.venus838data_raw.SealevelAltitude, 100, "Altitude_Raw= ", " meters; ");
+                printpositionfloatformat(gps.venus838data_raw.velocity, 100, "Velocity_Raw= ", " m/s; ");
                 
                 //Serial.println("Added data:\n");
                 //const String fixmodmask[]={"no fix", "2D", "3D", "3D+DGNSS"};
