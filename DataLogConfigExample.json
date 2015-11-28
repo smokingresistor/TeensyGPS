@@ -37,7 +37,8 @@
 	"gyro_y" : "false"
 }{
 	"class" : "CNF",
-	"device" : "true",
+	"log_en" : "1",
+	"can_en" : "1",
 	"rate" : "50",
 	"size" : "10",
 	"type" : "0",
