@@ -1,4 +1,16 @@
 {
+	"class" : "CNF",
+	"log_en" : "1",
+	"can_en" : "1",
+	"rate" : "50",
+	"size" : "10",
+	"log_type" : "0",
+	"trig" : "",
+	"trigv" : "",
+	"intv" : "",
+	"min" : "",
+	"max" : ""
+}{
 	"class" : "TPV",
 	"device" : "true",
 	"mode" : "true",
@@ -7,11 +19,15 @@
 	"lat" : "true",
 	"lon" : "true",
 	"alt" : "true",
+	"latf" : "true",
+	"lonf" : "true",
+	"altf" : "true",
 	"epx" : "false",
 	"epy" : "false",
 	"epv" : "false",
 	"track" : "true",
 	"speed" : "true",
+	"speedf" : "true",
 	"climb" : "false",
 	"epd" : "false",
 	"eps" : "false",
@@ -35,16 +51,4 @@
 	"acc_z" : "true",
 	"gyro_x" : "false",
 	"gyro_y" : "false"
-}{
-	"class" : "CNF",
-	"log_en" : "1",
-	"can_en" : "1",
-	"rate" : "50",
-	"size" : "10",
-	"type" : "0",
-	"trig" : "",
-	"trigv" : "",
-	"intv" : "",
-	"min" : "",
-	"max" : ""
 }
