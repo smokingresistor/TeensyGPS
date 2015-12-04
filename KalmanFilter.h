@@ -13,13 +13,14 @@ class KalmanFilter
 		~KalmanFilter();
 		unsigned long time;
 		int i;
+    float filterVal = 0.1;
 		float pi = 3.1415926;
 		float cosLat ;  
 		
 		int64_t Rearth ;
 		float RcovarianceMatrix[2][2] = {
-	         {0.00002210173, 0.00003516370},
-	         {0.00003516370, 0.00001380327},
+	         {0.000002210173, 0.000003516370},
+	         {0.000003516370, 0.000001380327},
 	  };
 		
 		float QcovarianceMatrix[4][4]= {
@@ -67,6 +68,8 @@ class KalmanFilter
 	
 	
 		int64_t* KalmanProcessing(int64_t lat, int64_t lon);
+    int64_t* KalmanNoData();
+    float    Smooth(int data, float filterVal, float smoothedVal);
  private:
 };
 #endif

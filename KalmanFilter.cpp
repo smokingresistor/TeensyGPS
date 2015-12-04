@@ -171,3 +171,79 @@ int64_t* KalmanFilter::KalmanProcessing(int64_t lat, int64_t lon){
         
 }
 
+int64_t* KalmanFilter::KalmanNoData(){
+          uint64_t currentTime = (int32_t) millis();  
+          delta_T = (float) (currentTime - time) / 1000; //Time elapsed in seconds
+          float Amatrix[4][4] = {
+                 {1, 0,  delta_T, 0      },
+                 {0, 1,  0,       delta_T},
+                 {0, 0,  1,       0      },
+                 {0, 0,  0,       1      },
+          };          
+          float nextXstateEstimate[4][1] = {
+                {0},
+                {0},
+                {0},
+                {0},
+          };    
+          Matrix.Multiply((float*) Amatrix, (float*) Xstate, 4, 4, 1, (float*) nextXstateEstimate);
+          Xstate[0][0] = nextXstateEstimate[0][0];
+          Xstate[1][0] = nextXstateEstimate[1][0];
+          Xstate[2][0] = nextXstateEstimate[2][0];
+          Xstate[3][0] = nextXstateEstimate[3][0];
+                    
+          /*************Line 78 of Matlab code*************/
+          float AmatrixTranspose[4][4] = {
+                {0.0, 0.0, 0.0, 0.0},
+                {0.0, 0.0, 0.0, 0.0},
+                {0.0, 0.0, 0.0, 0.0},
+                {0.0, 0.0, 0.0, 0.0},
+          };
+          float IntermediateProductMatrix[4][4] = {
+                {0.0, 0.0, 0.0, 0.0},
+                {0.0, 0.0, 0.0, 0.0},
+                {0.0, 0.0, 0.0, 0.0},
+                {0.0, 0.0, 0.0, 0.0},
+          };
+          float IntermediateSumMatrix[4][4] = {
+                {0.0, 0.0, 0.0, 0.0},
+                {0.0, 0.0, 0.0, 0.0},
+                {0.0, 0.0, 0.0, 0.0},
+                {0.0, 0.0, 0.0, 0.0},
+          }; 
+          float PerrorCovarianceEstimate[4][4] = {
+                {0.0, 0.0, 0.0, 0.0},
+                {0.0, 0.0, 0.0, 0.0},
+                {0.0, 0.0, 0.0, 0.0},
+                {0.0, 0.0, 0.0, 0.0},
+          };         
+          Matrix.Transpose((float*) Amatrix, 4 ,4, (float *) AmatrixTranspose);
+          Matrix.Multiply((float*) Amatrix, (float*) PerrorCovariance, 4,4,4, (float*) IntermediateProductMatrix);
+          Matrix.Multiply((float*) IntermediateProductMatrix, (float*) AmatrixTranspose, 4,4,4, (float*) IntermediateSumMatrix);
+          Matrix.Add((float*) IntermediateSumMatrix, (float*) QcovarianceMatrix, 4, 4, (float*) PerrorCovarianceEstimate);
+          for (int j = 0; j < 4; j++){
+            for (int k = 0; k < 4; k++){
+              PerrorCovariance[j][k] = PerrorCovarianceEstimate[j][k];
+            }
+          }          
+          GPS_data[0][0] = Xstate[0][0];
+          GPS_data[0][1] = Xstate[1][0];
+          time = millis();
+          return GPS_data[0];                
+}
+
+float KalmanFilter::Smooth(int data, float filterVal, float smoothedVal){
+
+
+  if (filterVal > 1){      // check to make sure param's are within range
+    filterVal = .99;
+  }
+  else if (filterVal <= 0){
+    filterVal = 0;
+  }
+
+  smoothedVal = (data * (1 - filterVal)) + (smoothedVal  *  filterVal);
+
+  return smoothedVal;
+}
+
