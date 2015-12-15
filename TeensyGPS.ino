@@ -36,6 +36,7 @@ Metro beacon_timeout = Metro(30000);
 Metro beacon_trigger = Metro(250);
 /*kalman filter class*/
 KalmanFilter filter;
+KalmanFilterVA filterVA;
 
 union conv lat, lon;
 union conv_short alt, vel;
@@ -192,7 +193,7 @@ void loop()
            // t1=millis();
            ret=waitingRespondandReceive(gps.RecVBinarybuf,0xA8,2000); 
            if(ret>7){                
-                 if(!GPSNavigationMsgProcessing(&(gps.venus838data_raw),&(gps.venus838data_filter),gps,&filter))
+                 if(!GPSNavigationMsgProcessing(&(gps.venus838data_raw),&(gps.venus838data_filter),gps,&filter, &filterVA))
                  {
                        Serial.println("Checksum error has been occured\n");
                        checksums++;

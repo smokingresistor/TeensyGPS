@@ -155,7 +155,7 @@ int SendBinaryMessagetoGPSreceiver(int streamsize, byte* sendbuf, byte* receiveb
 /*Receive GPS Navigation binary messat and input into parameter1 and after kalman filtering,
     Insert filtered data into parmeter2 
 */
-int GPSNavigationMsgProcessing(NavGPSdata *filterbeforedata, NavGPSdata *filterafterdata,BMsg838 gps,KalmanFilter *filter){
+int GPSNavigationMsgProcessing(NavGPSdata *filterbeforedata, NavGPSdata *filterafterdata,BMsg838 gps,KalmanFilter *filter,KalmanFilterVA *filterVA){
       int ret;
       //GPS interface variabes
       uint8_t modenum[2];
@@ -195,8 +195,9 @@ int GPSNavigationMsgProcessing(NavGPSdata *filterbeforedata, NavGPSdata *filtera
                 long_velocity+=(array_veolcity[k]*array_veolcity[k]);
             long_velocity=sqrt(long_velocity);
             filterbeforedata->velocity=(float)long_velocity/100.0;
-            filterafterdata->SealevelAltitude=filter->Smooth(array_altitude[1], filter->filterVal, filterafterdata->SealevelAltitude)/100.0;
-            filterafterdata->velocity=filter->Smooth(long_velocity, filter->filterVal,filterafterdata->velocity)/100.0;
+            filterdata = filterVA->KalmanProcessing(array_altitude[1], long_velocity);
+            filterafterdata->SealevelAltitude=(float)filterdata[0]/100.0;
+            filterafterdata->velocity=(float)filterdata[1]/100.0;
             //filterafterdata->velocity=(float)filterdata[1]/100.0;
             return 1;        
             

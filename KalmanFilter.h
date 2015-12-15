@@ -13,7 +13,7 @@ class KalmanFilter
 		~KalmanFilter();
 		unsigned long time;
 		int i;
-    float filterVal = 0.1;
+    float filterVal = 0.05;
 		float pi = 3.1415926;
 		float cosLat ;  
 		
