@@ -90,7 +90,6 @@ void setup()
        can_nav.id=0x304;
        can_nav.len = 8;
        CANbus.begin(); 
-       digitalWrite(led,led_on); 
        Serial.print("Canbus output enabled on fames:");
        Serial.print(can_pos.id,HEX);
        Serial.print(",");
@@ -106,15 +105,16 @@ void setup()
     }
  if ((!SD.begin(chipSelect))&&(file_log==true))
    {  
-      Serial.println("File datalog ebabled");    
+      Serial.println("File datalog enabled");    
       Serial.println("Card Not Present");
       sd_datalog=false;
    }
  else
    {
-      Serial.println("File datalog ebabled");    
+      Serial.println("File datalog enabled");    
       Serial.println("Card Present");
       sd_datalog=true;
+      digitalWrite(led,led_on); 
       card.init(SPI_FULL_SPEED, chipSelect);
    }
   
@@ -342,6 +342,8 @@ void loop()
                                     Serial.println("Datafile Saved");
                                   }
                                 count++;
+                                led_on=!led_on;
+                                digitalWrite(led,led_on);          
                                 //dataFile.close();
                           }
 
