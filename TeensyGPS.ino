@@ -45,7 +45,8 @@ union conv lat, lon, lat_fil, lon_fil;
 union conv_short alt, vel, alt_fil, vel_fil;
 int fileNum = 10000; 
 char namefile[13]="GPS10000.TXT";
-int chipSelect = 6;
+int chipSelect = 6; //TeensyGPS version 1.0
+//int chipSelect = 15; //TeensyGPS version 1.1
 int mosi = 7;
 int miso = 8;
 int sck = 14;
@@ -117,13 +118,13 @@ void setup()
     }
  if ((!SD.begin(chipSelect))&&(file_log==true))
    {  
-      Serial.println("File datalog ebabled");    
+      Serial.println("File datalog enabled");    
       Serial.println("Card Not Present");
       sd_datalog=false;
    }
  else
    {
-      Serial.println("File datalog ebabled");    
+      Serial.println("File datalog enabled");    
       Serial.println("Card Present");
       sd_datalog=true;
       card.init(SPI_FULL_SPEED, chipSelect);
@@ -146,7 +147,7 @@ void setup()
             if (dataFile)
              {
                  dataFile.println("---------------------------------------------------------------------------------------------------------------------------------------------------------");
-                 dataFile.println("Received_time;Latitude;Logitude;Altitude;Velocity;Latitude_fil;Logitude_fil;Altitude_fil;Velocity_fil;fix_mode;sat_num;GDOP;PDOP;HDOP;VDOP;TDOP;checksums");
+                 dataFile.println("Received_time;Latitude;Longitude;Altitude;Velocity;Latitude_fil;Longitude_fil;Altitude_fil;Velocity_fil;fix_mode;sat_num;GDOP;PDOP;HDOP;VDOP;TDOP;checksums");
                  dataFile.println("---------------------------------------------------------------------------------------------------------------------------------------------------------");
               dataFile.close();
               Serial.println("Header wrote ok");
@@ -181,7 +182,7 @@ void setup()
       }
   
   Serial.println("-------------------------------------------------------------------------------------------------------------------------------------");
-  Serial.println("Received_time;Latitude;Logitude;Altitude;Velocity;Latitude_fil;Logitude_fil;Altitude_fil;Velocity_fil;fix_mode;sat_num;checksums");
+  Serial.println("Received_time;Latitude;Longitude;Altitude;Velocity;Latitude_fil;Longitude_fil;Altitude_fil;Velocity_fil;fix_mode;sat_num;checksums");
   Serial.println("-------------------------------------------------------------------------------------------------------------------------------------");
   */
    
@@ -321,7 +322,7 @@ void loop()
                                                        if (dataFile)
                                                               {
                                                                   dataFile.println("---------------------------------------------------------------------------------------------------------------------------------------------------------");
-                                                                  dataFile.println("Received_time;Latitude;Logitude;Altitude;Velocity;Latitude_fil;Logitude_fil;Altitude_fil;Velocity_fil;fix_mode;sat_num;GDOP;PDOP;HDOP;VDOP;TDOP;checksums");
+                                                                  dataFile.println("Received_time;Latitude;Longitude;Altitude;Velocity;Latitude_fil;Longitude_fil;Altitude_fil;Velocity_fil;fix_mode;sat_num;GDOP;PDOP;HDOP;VDOP;TDOP;checksums");
                                                                   dataFile.println("---------------------------------------------------------------------------------------------------------------------------------------------------------");    
                                                                   Serial.print("Lap cut, new datafile is:"); 
                                                                   Serial.println(namefile); 
