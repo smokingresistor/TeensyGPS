@@ -2,6 +2,7 @@
 //#include <SoftwareSerial.h>    //in case arduino board
 #include "BMsg838.h"
 #include "KalmanFilter.h"
+//#include "KalmanFilterVA"
 #include "GPSSerialMessageCom.h"
 //#include <Adafruit_LSM9DS0.h>
 // #include <Adafruit_Sensor.h>
@@ -28,22 +29,23 @@ const String fixmodmask[]={"no fix", "2D", "3D", "3D+DGNSS"};
     uint8_t b[2];
   };
  
-static CAN_message_t can_pos,can_nav;
+static CAN_message_t can_pos,can_nav,can_pos_fil,can_nav_fil,can_lap;
 FlexCAN CANbus(1000000);
 /*gps interfacce relate class*/
 BMsg838 gps;
 Metro beacon_timeout = Metro(30000);
 Metro beacon_trigger = Metro(250);
+Metro file_time_cut= Metro(300000);
+
 /*kalman filter class*/
 KalmanFilter filter;
 KalmanFilterVA filterVA;
 
-union conv lat, lon;
-union conv_short alt, vel;
+union conv lat, lon, lat_fil, lon_fil;
+union conv_short alt, vel, alt_fil, vel_fil;
 int fileNum = 10000; 
 char namefile[13]="GPS10000.TXT";
-int chipSelect = 6; //TeensyGPS version 1.0
-//int chipSelect = 15; //TeensyGPS version 1.1
+int chipSelect = 6;
 int mosi = 7;
 int miso = 8;
 int sck = 14;
@@ -70,7 +72,7 @@ const float lon_beacon[4]={9.281226,  101.738322, 103.085608,   10.219222};
 //                        0 Monza     1 Sepang   2 Buri ram     3 Via XX Settembre
 File dataFile;
 
-const float beacon_distance=15; //radius in m for lap beacon trigger
+const float beacon_distance=9; //radious in m for lap beacon trigger
 
 
 void setup()
@@ -89,32 +91,41 @@ void setup()
        can_pos.len = 8;
        can_nav.id=0x304;
        can_nav.len = 8;
+       can_pos_fil.id=0x312;
+       can_pos_fil.len = 8;
+       can_nav_fil.id=0x314;
+       can_nav_fil.len = 8;
+       can_lap.id=0x308;
+       can_lap.len=8;
        CANbus.begin(); 
+       digitalWrite(led,led_on); 
        Serial.print("Canbus output enabled on fames:");
        Serial.print(can_pos.id,HEX);
        Serial.print(",");
-       Serial.println(can_nav.id,HEX);
-       
+       Serial.print(can_nav.id,HEX);   
+       Serial.print(",");
+       Serial.print(can_pos_fil.id,HEX);
+       Serial.print(",");
+       Serial.println(can_nav_fil.id,HEX);     
     }
     
  if (beacon_output==true)
     { 
       pinMode(pin_beacon, OUTPUT);
-      digitalWrite(pin_beacon,LOW);
+      digitalWrite(pin_beacon,HIGH);
       Serial.println("Lap beacon enabled");
     }
  if ((!SD.begin(chipSelect))&&(file_log==true))
    {  
-      Serial.println("File datalog enabled");    
+      Serial.println("File datalog ebabled");    
       Serial.println("Card Not Present");
       sd_datalog=false;
    }
  else
    {
-      Serial.println("File datalog enabled");    
+      Serial.println("File datalog ebabled");    
       Serial.println("Card Present");
       sd_datalog=true;
-      digitalWrite(led,led_on); 
       card.init(SPI_FULL_SPEED, chipSelect);
    }
   
@@ -134,9 +145,9 @@ void setup()
              delay(100);
             if (dataFile)
              {
-              dataFile.println("-------------------------------------------------------------------------------------------------------------------------------------");
-              dataFile.println("Received_time;Latitude;Longitude;Altitude;Velocity;Latitude_fil;Longitude_fil;Altitude_fil;Velocity_fil;fix_mode;sat_num;checksums");
-              dataFile.println("-------------------------------------------------------------------------------------------------------------------------------------");
+                 dataFile.println("---------------------------------------------------------------------------------------------------------------------------------------------------------");
+                 dataFile.println("Received_time;Latitude;Logitude;Altitude;Velocity;Latitude_fil;Logitude_fil;Altitude_fil;Velocity_fil;fix_mode;sat_num;GDOP;PDOP;HDOP;VDOP;TDOP;checksums");
+                 dataFile.println("---------------------------------------------------------------------------------------------------------------------------------------------------------");
               dataFile.close();
               Serial.println("Header wrote ok");
              }
@@ -170,7 +181,7 @@ void setup()
       }
   
   Serial.println("-------------------------------------------------------------------------------------------------------------------------------------");
-  Serial.println("Received_time;Latitude;Longitude;Altitude;Velocity;Latitude_fil;Longitude_fil;Altitude_fil;Velocity_fil;fix_mode;sat_num;checksums");
+  Serial.println("Received_time;Latitude;Logitude;Altitude;Velocity;Latitude_fil;Logitude_fil;Altitude_fil;Velocity_fil;fix_mode;sat_num;checksums");
   Serial.println("-------------------------------------------------------------------------------------------------------------------------------------");
   */
    
@@ -193,7 +204,8 @@ void loop()
            // t1=millis();
            ret=waitingRespondandReceive(gps.RecVBinarybuf,0xA8,2000); 
            if(ret>7){                
-                 if(!GPSNavigationMsgProcessing(&(gps.venus838data_raw),&(gps.venus838data_filter),gps,&filter, &filterVA))
+                // if(!GPSNavigationMsgProcessing(&(gps.venus838data_raw),&(gps.venus838data_filter),gps,&filter))
+                   if(!GPSNavigationMsgProcessing(&(gps.venus838data_raw),&(gps.venus838data_filter),gps,&filter, &filterVA))
                  {
                        Serial.println("Checksum error has been occured\n");
                        checksums++;
@@ -226,10 +238,16 @@ void loop()
                 */
                 if (can_output)
                           {
-                            lat.f=gps.venus838data_raw.Latitude*1E7;                       
+                            
+                            lat.f=gps.venus838data_raw.Latitude*1E7; 
+                            lat_fil.f=gps.venus838data_filter.Latitude*1E7;
                             lon.f=gps.venus838data_raw.Longitude*1E7;
-                            alt.f=gps.venus838data_filter.SealevelAltitude*10;
-                            vel.f=gps.venus838data_filter.velocity*10*3.6;
+                            lon_fil.f=gps.venus838data_filter.Longitude*1E7;
+                            alt.f=gps.venus838data_raw.SealevelAltitude*10;
+                            alt_fil.f=gps.venus838data_filter.SealevelAltitude*10;
+                            vel.f=gps.venus838data_raw.velocity*10*3.6;
+                            vel_fil.f=gps.venus838data_filter.velocity*10*3.6;
+                            //raw data
                             can_pos.buf[0]=lat.b[3];
                             can_pos.buf[1]=lat.b[2];
                             can_pos.buf[2]=lat.b[1];
@@ -242,12 +260,29 @@ void loop()
                             can_nav.buf[1]=alt.b[0];
                             can_nav.buf[2]=vel.b[1];
                             can_nav.buf[3]=vel.b[0];
+                            //filter data
+                            can_pos_fil.buf[0]=lat_fil.b[3];
+                            can_pos_fil.buf[1]=lat_fil.b[2];
+                            can_pos_fil.buf[2]=lat_fil.b[1];
+                            can_pos_fil.buf[3]=lat_fil.b[0];
+                            can_pos_fil.buf[4]=lon_fil.b[3];
+                            can_pos_fil.buf[5]=lon_fil.b[2];
+                            can_pos_fil.buf[6]=lon_fil.b[1];
+                            can_pos_fil.buf[7]=lon_fil.b[0];
+                            can_nav_fil.buf[0]=alt_fil.b[1];
+                            can_nav_fil.buf[1]=alt_fil.b[0];
+                            can_nav_fil.buf[2]=vel_fil.b[1];
+                            can_nav_fil.buf[3]=vel_fil.b[0];
                             sats=gps.venus838data_raw.NumSV;
                             fix=gps.venus838data_raw.fixmode;
                             fix=fix<<4;
-                            can_nav.buf[7]=fix|sats;           
+                            can_nav.buf[7]=fix|sats; 
+                            can_nav_fil.buf[7]=can_nav.buf[7];     
                             CANbus.write(can_pos);  
                             CANbus.write(can_nav); 
+                            CANbus.write(can_pos_fil);  
+                            CANbus.write(can_nav_fil);
+                            CANbus.write(can_lap);
                             led_on=!led_on;
                             digitalWrite(led,led_on);                       
                           }
@@ -259,15 +294,21 @@ void loop()
                              {
                                distanza=haverSine(gps.venus838data_raw.Latitude,gps.venus838data_raw.Longitude,lat_beacon[i],lon_beacon[i]);
                                
-                               if ((distanza<beacon_distance)&&(beacon_timeout.check()==true))
+                               if ((((distanza<beacon_distance)&&(beacon_timeout.check()==true)))||(file_time_cut.check()==true))
                                
                                   {
-                                    //Rise level of beacon pin outpu
-                                    digitalWrite(pin_beacon,HIGH);                                    
+                                    //Rise level of beacon pin output or lowers for McLaren
+                                    digitalWrite(pin_beacon,LOW); 
+                                       if (can_output)
+                                       {
+                                        can_lap.buf[0]=1;
+                                       }
+                                                                                 
                                     if (sd_datalog==1)
                                         {
                                           dataFile.println("Beacon Trigger"); 
-                                          dataFile.flush();                                          
+                                          if (file_time_cut.check()==true) dataFile.println("Time Trigger"); 
+                                          //dataFile.flush();                                          
                                           dataFile.close(); 
                                                                                   
                                               while (SD.exists(namefile)) 
@@ -279,9 +320,9 @@ void loop()
                                              dataFile = SD.open(namefile, FILE_WRITE);
                                                        if (dataFile)
                                                               {
-                                                                  dataFile.println("-------------------------------------------------------------------------------------------------------------------------------------");
-                                                                  dataFile.println("Received_time;Latitude;Longitude;Altitude;Velocity;Latitude_fil;Longitude_fil;Altitude_fil;Velocity_fil;fix_mode;sat_num;checksums");
-                                                                  dataFile.println("-------------------------------------------------------------------------------------------------------------------------------------");    
+                                                                  dataFile.println("---------------------------------------------------------------------------------------------------------------------------------------------------------");
+                                                                  dataFile.println("Received_time;Latitude;Logitude;Altitude;Velocity;Latitude_fil;Logitude_fil;Altitude_fil;Velocity_fil;fix_mode;sat_num;GDOP;PDOP;HDOP;VDOP;TDOP;checksums");
+                                                                  dataFile.println("---------------------------------------------------------------------------------------------------------------------------------------------------------");    
                                                                   Serial.print("Lap cut, new datafile is:"); 
                                                                   Serial.println(namefile); 
                                                                   dataFile.close();                                                 
@@ -295,12 +336,16 @@ void loop()
                                         // file_cutted=true;
                                         beacon_timeout.reset();
                                         beacon_trigger.reset();
+                                        file_time_cut.reset();
                                         
                                   }
                                   else
                                   {
-                                    if (beacon_trigger.check()==true) digitalWrite(pin_beacon,LOW);
-                                    
+                                    if (beacon_trigger.check()==true) 
+                                    {
+                                       digitalWrite(pin_beacon,HIGH);
+                                       can_lap.buf[0]=0;
+                                    }
                                     // file_cutted=false;
                                   }                                  
                               } 
@@ -333,6 +378,16 @@ void loop()
                                 dataFile.print(";");
                                 dataFile.print(gps.venus838data_raw.NumSV);
                                 dataFile.print(";");
+                                dataFile.print(gps.venus838data_raw.GDOP,12);
+                                dataFile.print(";");
+                                dataFile.print(gps.venus838data_raw.PDOP,12);
+                                dataFile.print(";");
+                                dataFile.print(gps.venus838data_raw.HDOP,12);
+                                dataFile.print(";");
+                                dataFile.print(gps.venus838data_raw.VDOP,12);
+                                dataFile.print(";");
+                                dataFile.print(gps.venus838data_raw.TDOP,12);
+                                dataFile.print(";");
                                 dataFile.print(checksums);
                                 dataFile.println(";");                                
                                 // int temp=count%5;
@@ -342,8 +397,6 @@ void loop()
                                     Serial.println("Datafile Saved");
                                   }
                                 count++;
-                                led_on=!led_on;
-                                digitalWrite(led,led_on);          
                                 //dataFile.close();
                           }
 
@@ -367,14 +420,14 @@ void loop()
                 Serial.println(fixmodmask[gps.venus838data_raw.fixmode]);
                 Serial.println("NumSV=");
                 Serial.println(gps.venus838data_raw.NumSV);
-             
+                
                 printpositionfloatformat(gps.venus838data_raw.GDOP, 100, "  GDOP= ", "");
                 printpositionfloatformat(gps.venus838data_raw.PDOP, 100, "  PDOP= ", "");
                 printpositionfloatformat(gps.venus838data_raw.HDOP, 100, "  HDOP= ", "");
                 printpositionfloatformat(gps.venus838data_raw.VDOP, 100, "  VDOP= ", "");
                 printpositionfloatformat(gps.venus838data_raw.TDOP, 100, "  TDOP= ", "");
-
                 */
+                
                 
                  
            }else
@@ -412,7 +465,6 @@ float haverSine(float lat1, float lon1, float lat2, float lon2)
   float d = R * c;
   return d;
 }
-
 
 
 
