@@ -45,8 +45,8 @@ union conv lat, lon, lat_fil, lon_fil;
 union conv_short alt, vel, alt_fil, vel_fil;
 int fileNum = 10000; 
 char namefile[13]="GPS10000.TXT";
-int chipSelect = 6; //TeensyGPS version 1.0
-//int chipSelect = 15; //TeensyGPS version 1.1
+//int chipSelect = 6; //TeensyGPS version 1.0
+int chipSelect = 15; //TeensyGPS version 1.1
 int mosi = 7;
 int miso = 8;
 int sck = 14;
