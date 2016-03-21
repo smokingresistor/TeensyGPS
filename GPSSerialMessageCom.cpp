@@ -159,6 +159,8 @@ int GPSNavigationMsgProcessing(NavGPSdata *filterbeforedata, NavGPSdata *filtera
       int ret;
       //GPS interface variabes
       uint8_t modenum[2];
+      uint16_t gps_week[1];
+      uint32_t timeofweek[1];
       int32_t array_position[2];
       uint32_t array_altitude[2];
       uint16_t array_dilution[5];
@@ -169,11 +171,13 @@ int GPSNavigationMsgProcessing(NavGPSdata *filterbeforedata, NavGPSdata *filtera
       
       //Receive Navigate binary message and scale with data format 
       //and input into Parameters "
-      ret=gps.ReceiveNavigationData(modenum,array_position, array_altitude, array_dilution, array_coordinate,array_veolcity);
+      ret=gps.ReceiveNavigationData(modenum, gps_week, timeofweek, array_position, array_altitude, array_dilution, array_coordinate,array_veolcity);
       if(ret==1){
        	  
       		  filterbeforedata->fixmode=modenum[0];
             filterbeforedata->NumSV=modenum[1];
+            filterbeforedata->gps_week=gps_week[0];
+            filterbeforedata->timeofweek=timeofweek[0];
             filterbeforedata->Latitude=(float)array_position[0]/10000000.0;
             filterbeforedata->Longitude=(float)array_position[1]/10000000.0;
             filterbeforedata->SealevelAltitude=(float)array_altitude[1]/100.0;
@@ -204,3 +208,4 @@ int GPSNavigationMsgProcessing(NavGPSdata *filterbeforedata, NavGPSdata *filtera
         }
         else return ret;
 }
+

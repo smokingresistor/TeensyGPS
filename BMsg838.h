@@ -33,6 +33,8 @@ typedef struct GPSdata
       int64_t  receivedtime;
       byte  fixmode;
       byte  NumSV;
+      uint16_t gps_week;
+      uint32_t timeofweek;
       float Latitude;
       float Longitude;
       float SealevelAltitude;
@@ -88,7 +90,7 @@ class BMsg838
     uint8_t   checksum(byte* buffer, int len);
  	  
     uint8_t   MakeBinaryMessage(int len);
-    uint8_t   ReceiveNavigationData(uint8_t* modenum,int32_t *position, uint32_t* altitude, uint16_t *dilution, int32_t* coordinate,int32_t* veolcity);
+    uint8_t   ReceiveNavigationData(uint8_t* modenum, uint16_t* gps_week, uint32_t* timeofweek, int32_t *position, uint32_t* altitude, uint16_t *dilution, int32_t* coordinate,int32_t* veolcity);
     uint8_t   ResetGNSS(uint8_t startmode, uint16_t year, uint8_t month, uint8_t day,uint8_t hour, uint8_t minute, uint8_t second, int16_t latitude, int16_t longitude, int16_t altitude);
     uint8_t   GetSoftVersion();
     GPSSoftVersiondata* ResponseSoftVersion();
@@ -160,10 +162,10 @@ class BMsg838
     }
 
     // date as ddmmyy, time as hhmmsscc, and age in milliseconds
-    inline void get_datetime(unsigned long *date, unsigned long *time, unsigned long *fix_age = 0)
+    inline void get_datetime(unsigned long *date_, unsigned long *time_, unsigned long *fix_age = 0)
     {
-      if (date) *date = _date;
-      if (time) *time = _time;
+      if (date_) *date_ = _date;
+      if (time_) *time_ = _time;
       if (fix_age) *fix_age = _last_time_fix == GPS_INVALID_FIX_TIME ? 
         GPS_INVALID_AGE : millis() - _last_time_fix;
     }
@@ -184,8 +186,8 @@ class BMsg838
   inline unsigned long hdop() { return _hdop; }
 
     void f_get_position(float *latitude, float *longitude, unsigned long *fix_age = 0);
-  	void crack_datetime(int *year, byte *month, byte *day, 
-    byte *hour, byte *minute, byte *second, byte *hundredths = 0, unsigned long *fix_age = 0);
+  	void crack_datetime(int &year, byte &month, byte &day, 
+    byte &hour, byte &minute, byte &second, byte &hundredths, unsigned long &fix_age);
   	float f_altitude();
   	float f_course();
   	float f_speed_knots();
@@ -258,3 +260,4 @@ private:
 #undef round 
 
 #endif
+

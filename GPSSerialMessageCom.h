@@ -18,3 +18,4 @@ int SendBinaryMessagetoGPSreceiver(int streamsize, byte* sendbuf, byte* receiveb
 int BinaryRecvMsgtype(const char *MsgInfo,byte* receivebuf);
 int GPSNavigationMsgProcessing(NavGPSdata *filterbeforedata, NavGPSdata *filterafterdata,BMsg838 gps,KalmanFilter *filter,KalmanFilterVA *filterVA);
 #endif
+

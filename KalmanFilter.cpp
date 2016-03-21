@@ -247,3 +247,4 @@ float KalmanFilter::Smooth(int data, float filterVal, float smoothedVal){
   return smoothedVal;
 }
 
+
