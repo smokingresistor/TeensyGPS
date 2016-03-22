@@ -63,4 +63,26 @@ extern int checksums;
 extern BMsg838 gps;
 extern String UTC_Time;
 extern float course_angle; 
+
+typedef struct DOF_DATA{
+  float heading;
+  float pitch;
+  float yaw;
+  float roll;
+  float dip;
+  float mag_len;
+  float mag_x;
+  float mag_y;
+  float mag_z;
+  float acc_len;
+  float acc_x;
+  float acc_y;
+  float acc_z;
+  float gyro_x;
+  float gyro_y;
+};
+
+extern float get_declination(float lat, float lon);
+extern struct DOF_DATA att;
+
 #endif

@@ -39,11 +39,11 @@ typedef struct GPSdata
       float Longitude;
       float SealevelAltitude;
       float velocity;
-      float GDOP;
-      float PDOP;
-      float HDOP;
-      float VDOP;
-      float TDOP;
+      float gdop;
+      float pdop;
+      float hdop;
+      float vdop;
+      float tdop;
       
 }NavGPSdata;
 

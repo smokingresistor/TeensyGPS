@@ -182,11 +182,11 @@ int GPSNavigationMsgProcessing(NavGPSdata *filterbeforedata, NavGPSdata *filtera
             filterbeforedata->Longitude=(float)array_position[1]/10000000.0;
             filterbeforedata->SealevelAltitude=(float)array_altitude[1]/100.0;
               
-            filterbeforedata->GDOP=(float)array_dilution[0]/100.0;
-      		  filterbeforedata->PDOP=(float)array_dilution[1]/100.0;
-            filterbeforedata->HDOP=(float)array_dilution[2]/100.0;
-            filterbeforedata->VDOP=(float)array_dilution[3]/100.0;
-            filterbeforedata->TDOP=(float)array_dilution[4]/100.0;
+            filterbeforedata->gdop=(float)array_dilution[0]/100.0;
+      		  filterbeforedata->pdop=(float)array_dilution[1]/100.0;
+            filterbeforedata->hdop=(float)array_dilution[2]/100.0;
+            filterbeforedata->vdop=(float)array_dilution[3]/100.0;
+            filterbeforedata->tdop=(float)array_dilution[4]/100.0;
 
             if ((array_position[0]!=0)&&(array_position[1]!=0))  {
             filterdata=filter->KalmanProcessing((int64_t)array_position[0], (int64_t)array_position[1]);
@@ -202,7 +202,6 @@ int GPSNavigationMsgProcessing(NavGPSdata *filterbeforedata, NavGPSdata *filtera
             filterdata = filterVA->KalmanProcessing(array_altitude[1], long_velocity);
             filterafterdata->SealevelAltitude=(float)filterdata[0]/100.0;
             filterafterdata->velocity=(float)filterdata[1]/100.0;
-            //filterafterdata->velocity=(float)filterdata[1]/100.0;
             return 1;        
             
         }
