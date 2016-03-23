@@ -378,22 +378,19 @@ void can_send(){
 
 void sensor_9dof_read()
 {
-  float prev_heading, period, prev_time;
   sensors_vec_t   orientation;
+  float declination;
   /* Get a new sensor event */ 
   sensors_event_t accel, mag, gyro, temp;
   lsm.getEvent(&accel, &mag, &gyro, &temp); 
   if (ahrs.getOrientation(&orientation))
     {
-       att.heading = orientation.heading;
+       att.yaw = orientation.heading;
        att.pitch = orientation.pitch;
        att.roll = orientation.roll;
     }
-  att.dip = get_declination (gps.venus838data_filter.Latitude, gps.venus838data_raw.Longitude);
-  period = (millis() - prev_time)/1000.0;
-  prev_time = millis();
-  att.yaw = (att.heading - prev_heading)/period;
-  prev_heading =  att.heading;
+  declination = get_declination (gps.venus838data_filter.Latitude, gps.venus838data_raw.Longitude);
+  att.heading = att.yaw + declination;
   att.mag_x = mag.magnetic.x;
   att.mag_y = mag.magnetic.y;
   att.mag_z = mag.magnetic.z;
@@ -404,6 +401,8 @@ void sensor_9dof_read()
   att.acc_len = sqrt (sq(att.acc_x)+sq(att.acc_y)+sq(att.acc_z));
   att.gyro_x = gyro.gyro.x;
   att.gyro_y = gyro.gyro.y;
+  att.gyro_z = gyro.gyro.z;
+  att.temp = temp.temperature;
   // print out accelleration data
   Serial.print("Accel X: "); Serial.print(accel.acceleration.x); Serial.print(" ");
   Serial.print("  \tY: "); Serial.print(accel.acceleration.y);       Serial.print(" ");
@@ -427,8 +426,6 @@ void sensor_9dof_read()
   Serial.print(F(" "));
   Serial.print(orientation.pitch);
   Serial.print(F(" "));
-  Serial.print(orientation.heading);
-  Serial.println(F(""));
   Serial.println("**********************\n");
 }
 

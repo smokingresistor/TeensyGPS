@@ -80,6 +80,8 @@ typedef struct DOF_DATA{
   float acc_z;
   float gyro_x;
   float gyro_y;
+  float gyro_z;
+  float temp;
 };
 
 extern float get_declination(float lat, float lon);

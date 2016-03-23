@@ -66,7 +66,7 @@ String TPV_name[21] = {"device",
                        "hdop", 
                        "vdop", 
                        "tdop",};
-String ATT_name[18] = {"device", 
+String ATT_name[20] = {"device", 
                        "time", 
                        "heading", 
                        "pitch", 
@@ -82,8 +82,9 @@ String ATT_name[18] = {"device",
                        "acc_y", 
                        "acc_z", 
                        "gyro_x", 
-                       "gyro_y"};
-
+                       "gyro_y",
+                       "gyro_z",
+                       "temp"};
 struct DOF_DATA att;
 
 static const int16_t dec_tbl[37][73] = \
@@ -221,7 +222,7 @@ void parseJSON() {
           TPV[i] = config2 [TPV_name[i]];
       };
       classConfig[2] = config3["class"];
-      for (i = 0; i < 17; i++){
+      for (i = 0; i < 19; i++){
           ATT[i] = config3 [ATT_name[i]];
       };
       Serial.println("Update EEPROM");
@@ -251,7 +252,7 @@ void printJSON(){
     Serial.println();
     Serial.print("ATT");
     Serial.print(" ");
-    for (int i = 0; i < 17; i++){
+    for (int i = 0; i < 19; i++){
         Serial.print(ATT[i]);
         Serial.print(" ");
     };
@@ -321,7 +322,7 @@ void create_newlog(){
            header = header + check_TPV(i);
         }
         header = "class," + header + "class,";
-        for (int i = 0; i < 17; i++){
+        for (int i = 0; i < 19; i++){
            header = header + check_ATT(i);
         }
         dataFile.println(header);
@@ -337,7 +338,8 @@ void create_newlog(){
 void dataFloat(float value, int mode){
     char outstr[21];
     dtostrf(value, 20, 12, outstr);
-    dataFile.print (outstr);
+    if (gps.venus838data_raw.fixmode >= mode)
+        dataFile.print (outstr);
     dataFile.print(",");
 }
 
@@ -398,7 +400,7 @@ void LogATT(){
         dataFile.print(",");
     };
     if(ATT[2])
-        dataFloat(att.heading, 0);
+        dataFloat(att.heading, 2);
     if(ATT[3])
         dataFloat(att.pitch, 0);
     if(ATT[4])
@@ -427,6 +429,10 @@ void LogATT(){
         dataFloat(att.gyro_x, 0);
     if(ATT[16])
         dataFloat(att.gyro_y, 0);
+    if(ATT[17])
+        dataFloat(att.gyro_z, 0);
+    if(ATT[18])
+        dataFloat(att.temp, 0);
     dataFile.println();          
     dataFile.flush();
     filesize = dataFile.size();
