@@ -81,10 +81,16 @@ typedef struct DOF_DATA{
   float gyro_x;
   float gyro_y;
   float gyro_z;
+  float quat1;
+  float quat2;
+  float quat3;
+  float quat4;
   float temp;
 };
 
-extern float get_declination(float lat, float lon);
+extern float ax, ay, az, gx, gy, gz, mx, my, mz; 
+extern float heading, roll, pitch, yaw, temp, inclination; 
+extern float q[4];
 extern struct DOF_DATA att;
 
 #endif

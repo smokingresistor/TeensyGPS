@@ -4,14 +4,13 @@
 #include "KalmanFilter.h"
 //#include "KalmanFilterVA"
 #include "GPSSerialMessageCom.h"
-#include <Adafruit_LSM9DS0.h>
-#include <Adafruit_Sensor.h>
-#include <Adafruit_Simple_AHRS.h>
+#include <SFE_LSM9DS0.h>
 #include <Wire.h>
 #include <SPI.h>
 #include <SD.h>
 #include <EEPROMex.h>
 #include "LogLib.h"
+#include "LSM9DS0.h"
 #include <ArduinoJson.h>
 #include <FlexCAN.h>
 #include <Metro.h>
@@ -36,10 +35,6 @@ const String fixmodmask[]={"no fix", "2D", "3D", "3D+DGNSS"};
 static CAN_message_t can_pos,can_nav,can_pos_fil,can_nav_fil, can_lap;
 FlexCAN CANbus(1000000);
 
-Adafruit_LSM9DS0 lsm = Adafruit_LSM9DS0(1000);
-// Create simple AHRS algorithm using the LSM9DS0 instance's accelerometer and magnetometer.
-Adafruit_Simple_AHRS ahrs(&lsm.getAccel(), &lsm.getMag());
-  
 /*gps interfacce relate class*/
 BMsg838 gps;
 Metro beacon_timeout = Metro(30000);
@@ -74,13 +69,15 @@ int newlog, rate, max_filesize, filesize, log_type, trig, intv;
 float blat, blong, btime, btol, course_angle, trigv, min_val, max_val;
 String UTC_Time;
 
+struct DOF_DATA att;
+float ax, ay, az, gx, gy, gz, mx, my, mz; // variables to hold latest sensor data values 
+float heading, roll, pitch, yaw, temp, inclination; 
+float q[4] = {1.0f, 0.0f, 0.0f, 0.0f};    // vector to hold quaternion
+
 void setup()
 {
   Serial.begin(115200); 
-  lsm.begin();
-  lsm.setupAccel(lsm.LSM9DS0_ACCELRANGE_2G);
-  lsm.setupMag(lsm.LSM9DS0_MAGGAIN_2GAUSS);
-  lsm.setupGyro(lsm.LSM9DS0_GYROSCALE_245DPS);
+  sensor_9dof_configure();
   delay(1000);
   pinMode(led, OUTPUT);
   LogSetup();
@@ -168,7 +165,7 @@ void loop()
            if(ret>7){                
                 if(!GPSNavigationMsgProcessing(&(gps.venus838data_raw),&(gps.venus838data_filter),gps,&filter, &filterVA))
                 {
-                     Serial.println("Checksum error has been occured\n");
+                //     Serial.println("Checksum error has been occured\n");
                      checksums++;
                 }   
                 /*
@@ -318,7 +315,7 @@ boolean check_triggers(){
 }
 
 boolean check_trval(float value, float offset){
-  if (((1-offset)*trigv < value)&&(value < (1+offset)*trigv))
+  if ((((1-offset)*trigv) < value)&&(value < ((1+offset)*trigv)))
     return true;
   return false;
 }
@@ -375,60 +372,6 @@ void can_send(){
   CANbus.write(can_nav_fil);
   CANbus.write(can_lap);               
 }
-
-void sensor_9dof_read()
-{
-  sensors_vec_t   orientation;
-  float declination;
-  /* Get a new sensor event */ 
-  sensors_event_t accel, mag, gyro, temp;
-  lsm.getEvent(&accel, &mag, &gyro, &temp); 
-  if (ahrs.getOrientation(&orientation))
-    {
-       att.yaw = orientation.heading;
-       att.pitch = orientation.pitch;
-       att.roll = orientation.roll;
-    }
-  declination = get_declination (gps.venus838data_filter.Latitude, gps.venus838data_raw.Longitude);
-  att.heading = att.yaw + declination;
-  att.mag_x = mag.magnetic.x;
-  att.mag_y = mag.magnetic.y;
-  att.mag_z = mag.magnetic.z;
-  att.mag_len = sqrt(sq(att.mag_x)+sq(att.mag_x)+sq(att.mag_z));
-  att.acc_x = accel.acceleration.x;
-  att.acc_y = accel.acceleration.y;
-  att.acc_z = accel.acceleration.z;
-  att.acc_len = sqrt (sq(att.acc_x)+sq(att.acc_y)+sq(att.acc_z));
-  att.gyro_x = gyro.gyro.x;
-  att.gyro_y = gyro.gyro.y;
-  att.gyro_z = gyro.gyro.z;
-  att.temp = temp.temperature;
-  // print out accelleration data
-  Serial.print("Accel X: "); Serial.print(accel.acceleration.x); Serial.print(" ");
-  Serial.print("  \tY: "); Serial.print(accel.acceleration.y);       Serial.print(" ");
-  Serial.print("  \tZ: "); Serial.print(accel.acceleration.z);     Serial.println("  \tm/s^2");
-
-  // print out magnetometer data
-  Serial.print("Magn. X: "); Serial.print(mag.magnetic.x); Serial.print(" ");
-  Serial.print("  \tY: "); Serial.print(mag.magnetic.y);       Serial.print(" ");
-  Serial.print("  \tZ: "); Serial.print(mag.magnetic.z);     Serial.println("  \tgauss");
-  
-  // print out gyroscopic data
-  Serial.print("Gyro  X: "); Serial.print(gyro.gyro.x); Serial.print(" ");
-  Serial.print("  \tY: "); Serial.print(gyro.gyro.y);       Serial.print(" ");
-  Serial.print("  \tZ: "); Serial.print(gyro.gyro.z);     Serial.println("  \tdps");
-
-  // print out temperature data
-  Serial.print("Temp: "); Serial.print(temp.temperature); Serial.println(" *C");
-  /* 'orientation' should have valid .roll and .pitch fields */
-  Serial.print(F("Orientation: "));
-  Serial.print(orientation.roll);
-  Serial.print(F(" "));
-  Serial.print(orientation.pitch);
-  Serial.print(F(" "));
-  Serial.println("**********************\n");
-}
-
 
 
 
