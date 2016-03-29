@@ -35,8 +35,8 @@ extern int fileNum;
 extern char namefile[13];
 extern const char* classConfig[3];
 extern float CNF [17];
-extern boolean TPV [21];
-extern boolean ATT [18];
+extern boolean TPV [22];
+extern boolean ATT [24];
 
 extern void LogSetup();
 extern void incFileNum();
@@ -64,7 +64,7 @@ extern BMsg838 gps;
 extern String UTC_Time;
 extern float course_angle; 
 
-typedef struct DOF_DATA{
+struct DOF_DATA{
   float heading;
   float pitch;
   float yaw;

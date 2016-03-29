@@ -181,7 +181,7 @@ void sensor_9dof_configure()
   pinMode(INT1XM, INPUT);
   pinMode(INT2XM, INPUT);
   pinMode(DRDYG,  INPUT);
-  uint16_t status = dof.begin();
+  dof.begin();
   dof.setAccelScale(dof.A_SCALE_2G);
   dof.setGyroScale(dof.G_SCALE_245DPS);
   dof.setMagScale(dof.M_SCALE_2GS);
@@ -225,7 +225,7 @@ void sensor_9dof_read()
   float magXcomp = mx*cos(pitch) - mz*sin(pitch);
   float magYcomp = mx*sin(roll)*sin(pitch)+my*cos(roll)+mz*sin(roll)*cos(pitch);
   float magZcomp = mx*cos(roll)*sin(pitch)+my*sin(roll)-mz*cos(roll)*cos(pitch);
-  float magA = sqrt(sq(magXcomp)+sq(magYcomp)+sq(magZcomp));
+  // float magA = sqrt(sq(magXcomp)+sq(magYcomp)+sq(magZcomp));
   roll = 180*roll/M_PI;
   pitch = 180*pitch/M_PI;
   heading = 180*(atan2f(magYcomp,magXcomp)/M_PI + 1);

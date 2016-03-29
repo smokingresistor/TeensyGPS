@@ -174,7 +174,7 @@ int GPSNavigationMsgProcessing(NavGPSdata *filterbeforedata, NavGPSdata *filtera
       ret=gps.ReceiveNavigationData(modenum, gps_week, timeofweek, array_position, array_altitude, array_dilution, array_coordinate,array_veolcity);
       if(ret==1){
        	  
-      		  filterbeforedata->fixmode=modenum[0];
+      	    filterbeforedata->fixmode=modenum[0];
             filterbeforedata->NumSV=modenum[1];
             filterbeforedata->gps_week=gps_week[0];
             filterbeforedata->timeofweek=timeofweek[0];
@@ -193,7 +193,7 @@ int GPSNavigationMsgProcessing(NavGPSdata *filterbeforedata, NavGPSdata *filtera
             } else if (filter->i == 100) {filterdata=filter->KalmanNoData();}
             filterafterdata->Latitude=(float)filterdata[0]/10000000.0;
             filterafterdata->Longitude=(float)filterdata[1]/10000000.0;
-            filterafterdata->receivedtime=(float)filterdata[2];
+            //filterafterdata->receivedtime=(float)filterdata[2];
             long_velocity=0;
             for(int k=0;k<3;k++)
                 long_velocity+=(array_veolcity[k]*array_veolcity[k]);

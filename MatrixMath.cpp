@@ -30,7 +30,7 @@ void MatrixMath::Print(float* A, int m, int n, String label){
  
 void MatrixMath::Copy(float* A, int n, int m, float* B)
 {
-    int i, j, k;
+    int i, j;
     for (i=0;i<m;i++)
         for(j=0;j<n;j++)
         {
@@ -123,7 +123,7 @@ int MatrixMath::Invert(float* A, int n)
     // n = number of rows = number of columns in A (n x n)
     int pivrow;     // keeps track of current pivot row
     int k,i,j;      // k: overall index along diagonal; i: row index; j: col index
-    int pivrows[n]; // keeps track of rows swaps to undo at end
+    int pivrows[6]; // keeps track of rows swaps to undo at end
     float tmp;      // used for finding max value and making column swaps
  
     for (k = 0; k < n; k++)

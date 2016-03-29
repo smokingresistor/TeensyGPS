@@ -92,6 +92,7 @@ class BMsg838
     uint8_t   MakeBinaryMessage(int len);
     uint8_t   ReceiveNavigationData(uint8_t* modenum, uint16_t* gps_week, uint32_t* timeofweek, int32_t *position, uint32_t* altitude, uint16_t *dilution, int32_t* coordinate,int32_t* veolcity);
     uint8_t   ResetGNSS(uint8_t startmode, uint16_t year, uint8_t month, uint8_t day,uint8_t hour, uint8_t minute, uint8_t second, int16_t latitude, int16_t longitude, int16_t altitude);
+    uint8_t   ConfigureSBAS(boolean en_SBAS, uint16_t ranging, uint8_t URA_mask, boolean en_corr, uint8_t channels, uint8_t subsys_mask, uint8_t attributes);
     uint8_t   GetSoftVersion();
     GPSSoftVersiondata* ResponseSoftVersion();
     uint8_t   GetSoftCRC();

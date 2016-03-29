@@ -113,6 +113,23 @@ uint8_t BMsg838::ResetGNSS(uint8_t startmode, uint16_t year, uint8_t month, uint
 	SendStream[14]=altitude; 
 	return MakeBinaryMessage(15);
 }
+
+/*This is a request to configure SBAS parameters of GNSS receiver. */
+uint8_t BMsg838::ConfigureSBAS(boolean en_SBAS, uint16_t ranging, uint8_t URA_mask, boolean en_corr,
+        uint8_t channels, uint8_t subsys_mask, uint8_t attributes)
+{
+	memset(SendStream,0,128);
+	SendStream[0]=0x62;
+	SendStream[1]=1;
+	SendStream[2]=en_SBAS; 
+	SendStream[3]=ranging;
+	SendStream[4]=URA_mask;
+	SendStream[5]=en_corr; 
+	SendStream[6]=channels;
+	SendStream[7]=(1<<subsys_mask);
+	SendStream[8]=attributes;
+	return MakeBinaryMessage(9);
+}
 /*Make Stream to request message  of Softversion*/
 uint8_t BMsg838::GetSoftVersion(){
 	
@@ -428,10 +445,10 @@ uint8_t BMsg838::Response1PPSTiming(uint8_t* mode,uint32_t* len,uint32_t* stande
 		
 		*mode=RecVBinarybuf[5];
 		*len=(RecVBinarybuf[6]<<24)|(RecVBinarybuf[7]<<16)|(RecVBinarybuf[8]<<8)|RecVBinarybuf[9];
-		*standev=(RecVBinarybuf[10]<<24)|(RecVBinarybuf[11]<<16)|(RecVBinarybuf[12]<<8)|RecVBinarybuf[13];
-		*savelati=(RecVBinarybuf[14]<<56)|(RecVBinarybuf[15]<<48)|(RecVBinarybuf[16]<<40)|(RecVBinarybuf[17]<<32)|(RecVBinarybuf[18]<<24)|(RecVBinarybuf[19]<<16)|(RecVBinarybuf[20]<<8)|RecVBinarybuf[21];
-		*savelong=(RecVBinarybuf[22]<<56)|(RecVBinarybuf[23]<<48)|(RecVBinarybuf[24]<<40)|(RecVBinarybuf[25]<<32)|(RecVBinarybuf[25]<<26)|(RecVBinarybuf[27]<<16)|(RecVBinarybuf[28]<<8)|RecVBinarybuf[29];
-		*savealti=(RecVBinarybuf[30]<<24)|(RecVBinarybuf[31]<<16)|(RecVBinarybuf[32]<<8)|RecVBinarybuf[33];
+//		*standev=(RecVBinarybuf[10]<<24)|(RecVBinarybuf[11]<<16)|(RecVBinarybuf[12]<<8)|RecVBinarybuf[13];
+//		*savelati=(RecVBinarybuf[14]<<56)|(RecVBinarybuf[15]<<48)|(RecVBinarybuf[16]<<40)|(RecVBinarybuf[17]<<32)|(RecVBinarybuf[18]<<24)|(RecVBinarybuf[19]<<16)|(RecVBinarybuf[20]<<8)|RecVBinarybuf[21];
+//		*savelong=(RecVBinarybuf[22]<<56)|(RecVBinarybuf[23]<<48)|(RecVBinarybuf[24]<<40)|(RecVBinarybuf[25]<<32)|(RecVBinarybuf[25]<<26)|(RecVBinarybuf[27]<<16)|(RecVBinarybuf[28]<<8)|RecVBinarybuf[29];
+//		*savealti=(RecVBinarybuf[30]<<24)|(RecVBinarybuf[31]<<16)|(RecVBinarybuf[32]<<8)|RecVBinarybuf[33];
 		*runtimemode=RecVBinarybuf[34];
 		*runtimelen=(RecVBinarybuf[35]<<24)|(RecVBinarybuf[36]<<16)|(RecVBinarybuf[37]<<8)|RecVBinarybuf[38];
 		return (checksum(RecVBinarybuf+4, 35)==RecVBinarybuf[39]);

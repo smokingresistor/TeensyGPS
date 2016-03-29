@@ -32,8 +32,8 @@ StaticJsonBuffer<500> jsonBuffer3;
 const char* classConfig[3];
 
 float CNF [17];
-boolean TPV [21];
-boolean ATT [18];
+boolean TPV [22];
+boolean ATT [24];
 String CNF_name[17] = {"log_en", 
                        "can_en", 
                        "newlog", 
@@ -49,8 +49,9 @@ String CNF_name[17] = {"log_en",
                        "intv", 
                        "min", 
                        "max"};
-String TPV_name[21] = {"device", 
+String TPV_name[22] = {"device", 
                        "mode", 
+                       "sv",
                        "time", 
                        "lat", 
                        "lon", 
@@ -65,7 +66,8 @@ String TPV_name[21] = {"device",
                        "pdop", 
                        "hdop", 
                        "vdop", 
-                       "tdop",};
+                       "tdop",
+                       "error"};
 String ATT_name[24] = {"device", 
                        "time", 
                        "heading", 
@@ -181,7 +183,7 @@ void parseJSON() {
           CNF[i] = config1 [CNF_name[i]];
       };
       classConfig[1] = config2["class"];
-      for (i = 0; i < 20; i++){
+      for (i = 0; i < 21; i++){
           TPV[i] = config2 [TPV_name[i]];
       };
       classConfig[2] = config3["class"];
@@ -208,7 +210,7 @@ void printJSON(){
     Serial.println();
     Serial.print("TPV");
     Serial.print(" ");
-    for (int i = 0; i < 20; i++){
+    for (int i = 0; i < 21; i++){
         Serial.print(TPV[i]);
         Serial.print(" ");
     };
@@ -281,7 +283,7 @@ void create_newlog(){
     dataFile = SD.open(namefile, FILE_WRITE);           
     delay(100);
     if (dataFile){
-        for (int i = 0; i < 20; i++){
+        for (int i = 0; i < 21; i++){
            header = header + check_TPV(i);
         }
         header = "class," + header + "class,";
@@ -318,37 +320,45 @@ void LogTPV(){
           dataFile.print(",");   
       };
       if(TPV[2]){
+          dataFile.print(gps.venus838data_raw.NumSV);
+          dataFile.print(",");  
+      };
+      if(TPV[3]){
           dataFile.print(UTC_Time);
           dataFile.print(",");
       };
-      if(TPV[3])
-          dataFloat(gps.venus838data_raw.Latitude, 1);
       if(TPV[4])
-          dataFloat(gps.venus838data_raw.Longitude, 1);
+          dataFloat(gps.venus838data_raw.Latitude, 1);
       if(TPV[5])
-          dataFloat(gps.venus838data_raw.SealevelAltitude, 2);
+          dataFloat(gps.venus838data_raw.Longitude, 1);
       if(TPV[6])
-          dataFloat(gps.venus838data_filter.Latitude, 1);
+          dataFloat(gps.venus838data_raw.SealevelAltitude, 2);
       if(TPV[7])
-          dataFloat(gps.venus838data_filter.Longitude, 1);
+          dataFloat(gps.venus838data_filter.Latitude, 1);
       if(TPV[8])
-          dataFloat(gps.venus838data_filter.SealevelAltitude, 2);
+          dataFloat(gps.venus838data_filter.Longitude, 1);
       if(TPV[9])
-          dataFloat(course_angle, 0);
+          dataFloat(gps.venus838data_filter.SealevelAltitude, 2);
       if(TPV[10])
-          dataFloat(gps.venus838data_raw.velocity, 0);
+          dataFloat(course_angle, 0);
       if(TPV[11])
-          dataFloat(gps.venus838data_filter.velocity, 0);
+          dataFloat(gps.venus838data_raw.velocity, 0);
       if(TPV[12])
-          dataFloat(gps.venus838data_raw.gdop, 0);
+          dataFloat(gps.venus838data_filter.velocity, 0);
       if(TPV[13])
-          dataFloat(gps.venus838data_raw.pdop, 0);
+          dataFloat(gps.venus838data_raw.gdop, 0);
       if(TPV[14])
-          dataFloat(gps.venus838data_raw.hdop, 0);
+          dataFloat(gps.venus838data_raw.pdop, 0);
       if(TPV[15])
-          dataFloat(gps.venus838data_raw.vdop, 0);      
+          dataFloat(gps.venus838data_raw.hdop, 0);
       if(TPV[16])
+          dataFloat(gps.venus838data_raw.vdop, 0);      
+      if(TPV[17])
           dataFloat(gps.venus838data_raw.tdop, 0);
+      if(TPV[18]){
+          dataFile.print(checksums);  
+          dataFile.print(",");
+      };
 }
 
 void LogATT(){
