@@ -34,7 +34,7 @@ extern boolean file_open;
 extern int fileNum;
 extern char namefile[13];
 extern const char* classConfig[3];
-extern float CNF [17];
+extern float CNF [27];
 extern boolean TPV [22];
 extern boolean ATT [24];
 

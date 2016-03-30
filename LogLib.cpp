@@ -31,10 +31,10 @@ StaticJsonBuffer<500> jsonBuffer2;
 StaticJsonBuffer<500> jsonBuffer3;
 const char* classConfig[3];
 
-float CNF [17];
+float CNF [27];
 boolean TPV [22];
 boolean ATT [24];
-String CNF_name[17] = {"log_en", 
+String CNF_name[27] = {"log_en", 
                        "can_en", 
                        "newlog", 
                        "rate", 
@@ -48,7 +48,17 @@ String CNF_name[17] = {"log_en",
                        "trigv", 
                        "intv", 
                        "min", 
-                       "max"};
+                       "max",
+                       "fls_en",
+                       "set_norm_low",
+                       "lat_a",
+                       "long_a",
+                       "long_b",
+                       "output_line",
+                       "max_speed",
+                       "min_speed",
+                       "check_min_speed",
+                       "check_max_speed"};
 String TPV_name[22] = {"device", 
                        "mode", 
                        "sv",
@@ -179,7 +189,7 @@ void parseJSON() {
           parse_success = 1;
       }
       classConfig[0] = config1["class"];
-      for (i = 0; i < 16; i++){
+      for (i = 0; i < 26; i++){
           CNF[i] = config1 [CNF_name[i]];
       };
       classConfig[1] = config2["class"];
@@ -203,7 +213,7 @@ void parseJSON() {
 void printJSON(){
     Serial.print("CNF");
     Serial.print(" ");
-    for (int i = 0; i < 15; i++){
+    for (int i = 0; i < 26; i++){
         Serial.print(CNF[i]);
         Serial.print(" ");
     };
