@@ -20,6 +20,14 @@
 #define TIMECONV_DAYS_IN_NOV 30
 #define TIMECONV_DAYS_IN_DEC 31
 
+#define memBase1      0
+#define memBase2    512
+#define memBase3   1024
+#define memBase4   1280
+#define memBase5   1536
+#define EEPROMSize 2048
+#define number_JSON_object 5
+
 extern int chipSelect;
 extern int mosi;
 extern int miso;
@@ -33,7 +41,7 @@ extern boolean sd_datalog;
 extern boolean file_open;
 extern int fileNum;
 extern char namefile[13];
-extern const char* classConfig[3];
+extern const char* classConfig[number_JSON_object];
 extern float CNF [27];
 extern boolean TPV [22];
 extern boolean ATT [24];
@@ -63,6 +71,22 @@ extern int checksums;
 extern BMsg838 gps;
 extern String UTC_Time;
 extern float course_angle; 
+
+struct{
+  boolean en;
+  int id;
+}CAN[7];
+
+struct{
+  boolean en;
+  float lat_A;
+  float lon_A;
+  float lat_B;
+  float lon_B;
+  int lineOut;
+  float maxSpeed;
+  float minSpeed;
+}FLS [3];
 
 struct DOF_DATA{
   float heading;

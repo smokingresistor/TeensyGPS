@@ -1,9 +1,6 @@
 #include "LogLib.h"
 
-#define memBase1      0
-#define memBase2    512
-#define memBase3   1024
-#define EEPROMSize 2048
+
 //int chipSelect = 4; //Arduino Mega
 //int chipSelect = 6; //TeensyGPS version 1.0
 int chipSelect = 15; //TeensyGPS version 1.1
@@ -29,13 +26,16 @@ char nameConfig[12]="config.jsn";
 StaticJsonBuffer<500> jsonBuffer1;
 StaticJsonBuffer<500> jsonBuffer2;
 StaticJsonBuffer<500> jsonBuffer3;
-const char* classConfig[3];
+StaticJsonBuffer<500> jsonBuffer4;
+StaticJsonBuffer<500> jsonBuffer5;
+const char* classConfig[number_JSON_object];
 
 float CNF [27];
 boolean TPV [22];
 boolean ATT [24];
+
 String CNF_name[27] = {"log_en", 
-                       "can_en", 
+                       "canspeed", 
                        "newlog", 
                        "rate", 
                        "size", 
@@ -48,17 +48,7 @@ String CNF_name[27] = {"log_en",
                        "trigv", 
                        "intv", 
                        "min", 
-                       "max",
-                       "fls_en",
-                       "set_norm_low",
-                       "lat_a",
-                       "long_a",
-                       "long_b",
-                       "output_line",
-                       "max_speed",
-                       "min_speed",
-                       "check_min_speed",
-                       "check_max_speed"};
+                       "max"};
 String TPV_name[22] = {"device", 
                        "mode", 
                        "sv",
@@ -101,8 +91,16 @@ String ATT_name[24] = {"device",
                        "quat3",
                        "quat4",
                        "temp"};
-
-
+String CAN_name[7] =  {"can00",
+                       "can01",
+                       "can02",
+                       "can03",
+                       "can04",
+                       "can05",
+                       "can06"};
+String FLS_name[3] =  {"finish",
+                       "pit_entry",
+                       "pit_exit"};
 String SetNulls(){
   String n; 
   int numNulls = 0;
@@ -136,6 +134,8 @@ void update_EEPROM() {
   EEPROM.writeBlock(memBase1, CNF);
   EEPROM.writeBlock(memBase2, TPV);
   EEPROM.writeBlock(memBase3, ATT);
+  EEPROM.writeBlock(memBase4, CAN);
+  EEPROM.writeBlock(memBase5, FLS);
 }
 
 void read_EEPROM() {
@@ -143,17 +143,19 @@ void read_EEPROM() {
   EEPROM.readBlock(memBase1, CNF);
   EEPROM.readBlock(memBase2, TPV);
   EEPROM.readBlock(memBase3, ATT);
+  EEPROM.readBlock(memBase4, CAN);
+  EEPROM.readBlock(memBase5, FLS);
 }
 
 void parseJSON() {
-    char data, configData[3][500];
+    char data, configData[number_JSON_object][500];
     int j = 0;
     int i = 0;
-    int len[3];
+    int len[number_JSON_object];
     dataFile = SD.open(nameConfig, FILE_READ);
     if (dataFile){
         // make data to String;
-        while (((data = dataFile.read()) >= 0)&&(i < 3)){
+        while (((data = dataFile.read()) >= 0)&&(i < number_JSON_object)){
              if (data==10){}
              else if (data==0x7D){
                  configData[i][j++] = data;
@@ -166,7 +168,7 @@ void parseJSON() {
              }
         }
         Serial.println(nameConfig);
-        for (i = 0; i < 3; i++){
+        for (i = 0; i < number_JSON_object; i++){
             for (j = 0; j < len[i]; j++)
                 Serial.print(configData[i][j]);
             Serial.println();
@@ -181,7 +183,9 @@ void parseJSON() {
       JsonObject& config1 = jsonBuffer1.parseObject(configData[0]);
       JsonObject& config2 = jsonBuffer2.parseObject(configData[1]);
       JsonObject& config3 = jsonBuffer3.parseObject(configData[2]);
-      if (!(config1.success() && config2.success() && config3.success())) {
+      JsonObject& config4 = jsonBuffer4.parseObject(configData[3]);
+      JsonObject& config5 = jsonBuffer5.parseObject(configData[4]);
+      if (!(config1.success() && config2.success() && config3.success() && config4.success())) {
           Serial.println("parseObject() failed");
           parse_success = 0;
       }
@@ -200,6 +204,22 @@ void parseJSON() {
       for (i = 0; i < 23; i++){
           ATT[i] = config3 [ATT_name[i]];
       };
+      classConfig[3] = config4["class"];
+      for (i = 0; i < 7; i++){
+          CAN[i].en = config4 [CAN_name[i]][0];
+          CAN[i].id = config4 [CAN_name[i]][1];
+      };
+      classConfig[4] = config5["class"];
+      for (i = 0; i < 3; i++){
+          FLS[i].en = config5 [FLS_name[i]][0];
+          FLS[i].lat_A = config5 [FLS_name[i]][1];
+          FLS[i].lon_A = config5 [FLS_name[i]][2];
+          FLS[i].lat_B = config5 [FLS_name[i]][3];
+          FLS[i].lon_B = config5 [FLS_name[i]][4];
+          FLS[i].lineOut = config5 [FLS_name[i]][5];
+          FLS[i].maxSpeed = config5 [FLS_name[i]][6];
+          FLS[i].minSpeed = config5 [FLS_name[i]][7];
+      };    
       Serial.println("Update EEPROM");
       update_EEPROM();
    }
@@ -232,6 +252,37 @@ void printJSON(){
         Serial.print(" ");
     };
     Serial.println();
+    Serial.print("Canbus output enabled on frames:");
+    Serial.print(" ");
+    for (int i = 0; i < 7; i++){
+        if (CAN[i].en)
+            Serial.print(CAN[i].id);
+        Serial.print(" ");
+    };
+    Serial.println();
+    Serial.print("FLS");
+    Serial.print(" ");
+    for (int i = 0; i < 3; i++){
+        if (FLS[i].en)
+            Serial.print(FLS_name[i]);
+            Serial.print(": ");
+            Serial.print(FLS[i].lat_A);
+            Serial.print(" ");
+            Serial.print(FLS[i].lon_A);
+            Serial.print(" ");
+            Serial.print(FLS[i].lat_B);
+            Serial.print(" ");
+            Serial.print(FLS[i].lon_B);
+            Serial.print(" ");
+            Serial.print(FLS[i].lineOut);
+            Serial.print(" ");
+            Serial.print(FLS[i].minSpeed);
+            Serial.print(" ");
+            Serial.print(FLS[i].maxSpeed);
+        Serial.print(" ");
+    };
+    Serial.println();
+    
 }
 
 String check_TPV(int num){

@@ -31,9 +31,9 @@ const String fixmodmask[]={"no fix", "2D", "3D", "3D+DGNSS"};
     int16_t f;
     uint8_t b[2];
   };
- 
-static CAN_message_t can_pos,can_nav,can_pos_fil,can_nav_fil, can_dof1, can_dof2, can_lap;
 FlexCAN CANbus(1000000);
+static CAN_message_t can_pos,can_nav,can_pos_fil,can_nav_fil, can_dof1, can_dof2, can_lap;
+
 
 /*gps interfacce relate class*/
 BMsg838 gps;
@@ -52,7 +52,6 @@ int led = 13;
 int pin_beacon=21;
 
 boolean led_on=1;
-boolean can_output=1;
 boolean beacon_output=1;
 boolean file_cutted=false;
 
@@ -65,7 +64,7 @@ const float lon_beacon[4]={9.281226,  101.738322, 103.085608,   10.219222};
 const float beacon_distance=9; //radious in m for lap beacon trigger
 
 boolean log_en;
-int newlog, rate, max_filesize, filesize, log_type, trig, intv;
+int newlog, rate, can_speed, max_filesize, filesize, log_type, trig, intv;
 float blat, blong, btime, btol, course_angle, trigv, min_val, max_val;
 String UTC_Time;
 
@@ -96,7 +95,7 @@ void setup()
   delay(1000);
   pinMode(led, OUTPUT);
   LogSetup();
-  can_output = CNF[1];
+  can_speed = CNF[1];
   newlog = CNF[2];
   rate = CNF[3];
   max_filesize = CNF[4];
@@ -110,52 +109,39 @@ void setup()
   intv = CNF[12];
   min_val = CNF[13];
   max_val = CNF[14];
-  fls.en = CNF[15];
-  fls.set_norm_low = CNF[16];
-  fls.lat_a = CNF[17];
-  fls.long_a = CNF[18];
-  fls.lat_b = CNF[19];
-  fls.long_b = CNF[20];
-  fls.output_line = CNF[21];
-  fls.max_speed = CNF[22];
-  fls.min_speed = CNF[23];
-  fls.check_min_speed = CNF[24];
-  fls.check_max_speed = CNF[25];
+//  fls.en = CNF[15];
+//  fls.set_norm_low = CNF[16];
+//  fls.lat_a = CNF[17];
+//  fls.long_a = CNF[18];
+//  fls.lat_b = CNF[19];
+//  fls.long_b = CNF[20];
+//  fls.output_line = CNF[21];
+//  fls.max_speed = CNF[22];
+//  fls.min_speed = CNF[23];
+//  fls.check_min_speed = CNF[24];
+//  fls.check_max_speed = CNF[25];
   file_time_cut.interval(btime*1000);
   Serial.println(filesize*1048576);
   Serial.println(newlog);
-  if (can_output) 
+  FlexCAN CANbus(can_speed);
+  if (can_speed) 
     {       
-       can_pos.id=0x301;
+       can_pos.id=CAN[0].id;
        can_pos.len = 8;
-       can_nav.id=0x302;
+       can_nav.id=CAN[1].id;
        can_nav.len = 8;
-       can_pos_fil.id=0x303;
+       can_pos_fil.id=CAN[2].id;
        can_pos_fil.len = 8;
-       can_nav_fil.id=0x304;
+       can_nav_fil.id=CAN[3].id;
        can_nav_fil.len = 8;
-       can_dof1.id=0x305;
+       can_dof1.id = CAN[4].id;
        can_dof1.len = 8;
-       can_lap.id=0x306;
+       can_lap.id=CAN[5].id;
        can_lap.len=8;
-       can_dof2.id=0x307;
+       can_dof2.id=CAN[6].id;
        can_dof2.len=8;
        CANbus.begin(); 
        digitalWrite(led,led_on); 
-       Serial.print("Canbus output enabled on frames:");
-       Serial.print(can_pos.id,HEX);
-       Serial.print(",");
-       Serial.print(can_nav.id,HEX);   
-       Serial.print(",");
-       Serial.print(can_pos_fil.id,HEX);
-       Serial.print(",");
-       Serial.println(can_nav_fil.id,HEX);
-       Serial.print(",");
-       Serial.print(can_dof1.id,HEX);
-       Serial.print(",");
-       Serial.print(can_lap.id,HEX);   
-       Serial.print(",");
-       Serial.print(can_dof2.id,HEX);  
     }
     
   if (beacon_output==true)
@@ -197,10 +183,10 @@ void loop()
       memset(messagetype,0,64);
       if(Serial2.available()){
            ret=waitingRespondandReceive(gps.RecVBinarybuf,0xA8,2000); 
-           if(ret>7){                
+           if(ret>7){        
                 if(!GPSNavigationMsgProcessing(&(gps.venus838data_raw),&(gps.venus838data_filter),gps,&filter, &filterVA))
                 {
-                //     Serial.println("Checksum error has been occured\n");
+                     Serial.println("Checksum error has been occured\n");
                      checksums++;
                 }   
                 /*
@@ -236,7 +222,7 @@ void loop()
     sensor_9dof_read();    
     if (beacon_output)
         check_beacon_dist();
-    if (can_output)
+    if (can_speed)
         can_send(); 
     if (log_output){
         if((newlog==0)&&(filesize > (max_filesize*1048576))){ //file size more than max 
@@ -293,18 +279,23 @@ void loop()
 
 void check_beacon_dist(){
    float distance;
-   boolean finish_line_cross;
+   boolean line_cross[3];
    //distance = gps.distance_between(gps.venus838data_filter.Latitude,gps.venus838data_filter.Longitude,blat,blong); // distance to beacon
-   finish_line_cross = check_line_crossing(fls.lat_a, fls.lat_b, fls.long_a, fls.long_b, gps.venus838data_filter.Latitude,gps.venus838data_filter.Longitude);
-//   Serial.print("Distance: ");
-//   Serial.println(distance);
-   if (((finish_line_cross && (beacon_timeout.check()==true)))||(file_time_cut.check()==true)){ //check distance or time_cut
+   for (int i = 0; i < 3; i++){
+     if (FLS[i].en)
+       line_cross[i] = check_line_crossing(FLS[i].lat_A, FLS[i].lat_B, FLS[i].lon_A, FLS[i].lon_B, gps.venus838data_filter.Latitude,gps.venus838data_filter.Longitude);
+   };
+   if (line_cross[1])
+     Serial.println("Pit entry line crossing");
+   if (line_cross[2])
+     Serial.println("Pit exit line crossing");
+   if (((line_cross[0] && (beacon_timeout.check()==true)))||(file_time_cut.check()==true)){ //check distance or time_cut
      Serial.println("Finish line crossing");
      if (file_time_cut.check()==true)
            Serial.println("Time Cut Trigger"); 
      //Rise level of beacon pin output or lowers for McLaren
      digitalWrite(pin_beacon,LOW); 
-     if (can_output){
+     if (can_speed){
          can_lap.buf[0]=1; 
      }                 
      if (sd_datalog && log_output) {
@@ -477,13 +468,20 @@ void can_send(){
   can_dof2.buf[6]=q4.b[1];
   can_dof2.buf[7]=q4.b[0];  
   
-  CANbus.write(can_pos);  
-  CANbus.write(can_pos_fil); 
-  CANbus.write(can_nav); 
-  CANbus.write(can_nav_fil);
-  CANbus.write(can_dof1);
-  CANbus.write(can_lap);    
-  CANbus.write(can_dof2);  
+  if (CAN[0].en)
+      CANbus.write(can_pos);  
+  if (CAN[1].en)    
+      CANbus.write(can_pos_fil); 
+  if (CAN[2].en)
+      CANbus.write(can_nav); 
+  if (CAN[3].en)
+      CANbus.write(can_nav_fil);
+  if (CAN[4].en)
+      CANbus.write(can_dof1);
+  if (CAN[5].en)
+      CANbus.write(can_lap); 
+  if (CAN[6].en)   
+      CANbus.write(can_dof2);  
 }
 
 

@@ -835,7 +835,12 @@ uint8_t BMsg838::ReceiveNavigationData(uint8_t* modenum, uint16_t* gps_week, uin
 		veolcity[0]=(RecVBinarybuf[51]<<24)|(RecVBinarybuf[52]<<16)|(RecVBinarybuf[53]<<8)|(RecVBinarybuf[54]<<0);
 		veolcity[1]=(RecVBinarybuf[55]<<24)|(RecVBinarybuf[56]<<16)|(RecVBinarybuf[57]<<8)|(RecVBinarybuf[58]<<0);
 		veolcity[2]=(RecVBinarybuf[59]<<24)|(RecVBinarybuf[60]<<16)|(RecVBinarybuf[61]<<8)|(RecVBinarybuf[62]<<0);
-		return (checksum(RecVBinarybuf+4, 59)==RecVBinarybuf[63]);
+//                for (int i=0; i < 65; i++){
+//                  Serial.print(RecVBinarybuf[i]);
+//                  Serial.print(" ");
+//                }
+//                Serial.println();
+                return (checksum(RecVBinarybuf+4, 59)==RecVBinarybuf[63]);
 	}
 	else 
 		return -1;
