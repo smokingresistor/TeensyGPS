@@ -69,6 +69,9 @@ const byte BinaryMsgHeader[]={0xA0,0xA1};
             delay(10);
         }
         c=Serial2.read();
+//        Serial.print(c);
+//        Serial.print(" ");
+        
         if(pos<2){
           if(c==BinaryMsgHeader[pos]){
               buf[pos++]=c;
@@ -96,7 +99,8 @@ const byte BinaryMsgHeader[]={0xA0,0xA1};
             }
              
         }
-   }          
+   }         
+    Serial.println(); 
     return pos;  
 }
 
@@ -178,30 +182,30 @@ int GPSNavigationMsgProcessing(NavGPSdata *filterbeforedata, NavGPSdata *filtera
             filterbeforedata->NumSV=modenum[1];
             filterbeforedata->gps_week=gps_week[0];
             filterbeforedata->timeofweek=timeofweek[0];
-            filterbeforedata->Latitude=(float)array_position[0]/10000000.0;
-            filterbeforedata->Longitude=(float)array_position[1]/10000000.0;
-            filterbeforedata->SealevelAltitude=(float)array_altitude[1]/100.0;
+            filterbeforedata->Latitude=(double)array_position[0]/10000000.0;
+            filterbeforedata->Longitude=(double)array_position[1]/10000000.0;
+            filterbeforedata->SealevelAltitude=(double)array_altitude[1]/100.0;
               
-            filterbeforedata->gdop=(float)array_dilution[0]/100.0;
-      		  filterbeforedata->pdop=(float)array_dilution[1]/100.0;
-            filterbeforedata->hdop=(float)array_dilution[2]/100.0;
-            filterbeforedata->vdop=(float)array_dilution[3]/100.0;
-            filterbeforedata->tdop=(float)array_dilution[4]/100.0;
+            filterbeforedata->gdop=(double)array_dilution[0]/100.0;
+      		  filterbeforedata->pdop=(double)array_dilution[1]/100.0;
+            filterbeforedata->hdop=(double)array_dilution[2]/100.0;
+            filterbeforedata->vdop=(double)array_dilution[3]/100.0;
+            filterbeforedata->tdop=(double)array_dilution[4]/100.0;
 
             if ((array_position[0]!=0)&&(array_position[1]!=0))  {
             filterdata=filter->KalmanProcessing((int64_t)array_position[0], (int64_t)array_position[1]);
             } else if (filter->i == 100) {filterdata=filter->KalmanNoData();}
-            filterafterdata->Latitude=(float)filterdata[0]/10000000.0;
-            filterafterdata->Longitude=(float)filterdata[1]/10000000.0;
+            filterafterdata->Latitude=(double)filterdata[0]/10000000.0;
+            filterafterdata->Longitude=(double)filterdata[1]/10000000.0;
             //filterafterdata->receivedtime=(float)filterdata[2];
             long_velocity=0;
             for(int k=0;k<3;k++)
                 long_velocity+=(array_veolcity[k]*array_veolcity[k]);
             long_velocity=sqrt(long_velocity);
-            filterbeforedata->velocity=(float)long_velocity/100.0;
+            filterbeforedata->velocity=(double)long_velocity/100.0;
             filterdata = filterVA->KalmanProcessing(array_altitude[1], long_velocity);
-            filterafterdata->SealevelAltitude=(float)filterdata[0]/100.0;
-            filterafterdata->velocity=(float)filterdata[1]/100.0;
+            filterafterdata->SealevelAltitude=(double)filterdata[0]/100.0;
+            filterafterdata->velocity=(double)filterdata[1]/100.0;
             return 1;        
             
         }

@@ -35,15 +35,15 @@ typedef struct GPSdata
       byte  NumSV;
       uint16_t gps_week;
       uint32_t timeofweek;
-      float Latitude;
-      float Longitude;
-      float SealevelAltitude;
-      float velocity;
-      float gdop;
-      float pdop;
-      float hdop;
-      float vdop;
-      float tdop;
+      double Latitude;
+      double Longitude;
+      double SealevelAltitude;
+      double velocity;
+      double gdop;
+      double pdop;
+      double hdop;
+      double vdop;
+      double tdop;
       
 }NavGPSdata;
 

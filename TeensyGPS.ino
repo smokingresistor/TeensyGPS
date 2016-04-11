@@ -14,6 +14,7 @@
 #include <ArduinoJson.h>
 #include <FlexCAN.h>
 #include <Metro.h>
+#include <PString.h>
 
 const String fixmodmask[]={"no fix", "2D", "3D", "3D+DGNSS"};
 /* This sample code demonstrates the normal use of the binary message of 
@@ -31,6 +32,10 @@ const String fixmodmask[]={"no fix", "2D", "3D", "3D+DGNSS"};
     int16_t f;
     uint8_t b[2];
   };
+  
+
+
+
 FlexCAN CANbus(1000000);
 static CAN_message_t can_pos,can_nav,can_pos_fil,can_nav_fil, can_dof1, can_dof2, can_lap;
 
@@ -69,24 +74,11 @@ float blat, blong, btime, btol, course_angle, trigv, min_val, max_val;
 String UTC_Time;
 
 struct DOF_DATA att;
+struct CAN_DATA CAN[7];
+struct FLS_DATA FLS[3];
 float ax, ay, az, gx, gy, gz, mx, my, mz; // variables to hold latest sensor data values 
 float heading, roll, pitch, yaw, temp, inclination; 
 float q[4] = {1.0f, 0.0f, 0.0f, 0.0f};    // vector to hold quaternion
-
-//finish line segment
-struct FLS_DATA{
-  boolean en;
-  boolean set_norm_low;
-  float lat_a;
-  float long_a;
-  float lat_b;
-  float long_b;
-  int output_line;
-  float max_speed;
-  float min_speed;
-  boolean check_min_speed;
-  boolean check_max_speed;
-}fls;
 
 void setup()
 {
@@ -109,17 +101,6 @@ void setup()
   intv = CNF[12];
   min_val = CNF[13];
   max_val = CNF[14];
-//  fls.en = CNF[15];
-//  fls.set_norm_low = CNF[16];
-//  fls.lat_a = CNF[17];
-//  fls.long_a = CNF[18];
-//  fls.lat_b = CNF[19];
-//  fls.long_b = CNF[20];
-//  fls.output_line = CNF[21];
-//  fls.max_speed = CNF[22];
-//  fls.min_speed = CNF[23];
-//  fls.check_min_speed = CNF[24];
-//  fls.check_max_speed = CNF[25];
   file_time_cut.interval(btime*1000);
   Serial.println(filesize*1048576);
   Serial.println(newlog);
@@ -215,11 +196,12 @@ void loop()
                 Serial.print(checksums);
                 Serial.println(";");
                 */
+    
     Serial.print("UTC time: ");
     UTC_Time = GetUTCTime(gps.venus838data_raw.gps_week, gps.venus838data_raw.timeofweek);
     Serial.println(UTC_Time);
-    course_angle = gps.course_to(gps.venus838data_filter.Longitude, gps.venus838data_filter.Latitude, 0 , 0);          
-    sensor_9dof_read();    
+    //course_angle = gps.course_to(gps.venus838data_filter.Longitude, gps.venus838data_filter.Latitude, 0 , 0);          
+    sensor_9dof_read();   
     if (beacon_output)
         check_beacon_dist();
     if (can_speed)
@@ -242,8 +224,10 @@ void loop()
         if (log_en){
             led_on=!led_on;
             digitalWrite(led,led_on);
+            Serial.println(millis());
             LogTPV(); // log TPV object
             LogATT(); // log ATT object  
+            Serial.println(millis());
         }//if      
 //                Serial.println("filtered data:\n");                
 //                printpositionfloatformat(gps.venus838data_filter.Latitude, 10000000, "  Latitude= ", "degree");
@@ -270,9 +254,10 @@ void loop()
 //                printpositionfloatformat(gps.venus838data_raw.VDOP, 100, "  VDOP= ", "");
 //                printpositionfloatformat(gps.venus838data_raw.TDOP, 100, "  TDOP= ", "");
       
+      
          }//if
        }//if ret
-    }//if serial                   
+    }//if serial     
   }//while
 }//loop  
 
@@ -280,11 +265,36 @@ void loop()
 void check_beacon_dist(){
    float distance;
    boolean line_cross[3];
+   pt pointA, pointB, curr_gps, prev_gps;
    //distance = gps.distance_between(gps.venus838data_filter.Latitude,gps.venus838data_filter.Longitude,blat,blong); // distance to beacon
+   curr_gps.x = gps.venus838data_filter.Latitude;
+   curr_gps.y = gps.venus838data_filter.Longitude;
+//   curr_gps.x = 54.7386700;
+//   curr_gps.y = 55.9748100;
+//   prev_gps.x = 54.7386100;
+//   prev_gps.y = 55.9747700;
    for (int i = 0; i < 3; i++){
      if (FLS[i].en)
-       line_cross[i] = check_line_crossing(FLS[i].lat_A, FLS[i].lat_B, FLS[i].lon_A, FLS[i].lon_B, gps.venus838data_filter.Latitude,gps.venus838data_filter.Longitude);
+//       pointA.x = 54.7386700;
+//       pointA.y = 55.9747200;
+//       pointB.x = 54.7386400;
+//       pointB.y = 55.9748600;
+       pointA.x = FLS[i].lat_A;
+       pointA.y = FLS[i].lon_A;
+       pointB.x = FLS[i].lat_B;
+       pointB.y = FLS[i].lon_B;
+//       Serial.print(pointA.x, 7);
+//       Serial.print(" ");
+//       Serial.println(pointA.y, 7);
+//       Serial.print(pointB.x, 7);
+//       Serial.print(" ");
+//       Serial.println(pointB.y, 7);
+       line_cross[i] = get_line_intersection (pointA, pointB, prev_gps, curr_gps);
    };
+   prev_gps.x = curr_gps.x;
+   prev_gps.y = curr_gps.y;
+   if (line_cross[0])
+     Serial.println("Finish line crossing");
    if (line_cross[1])
      Serial.println("Pit entry line crossing");
    if (line_cross[2])
@@ -354,28 +364,56 @@ boolean check_constr(float value, float min, float max){
   return false;
 }
 
-boolean check_line_crossing(float lat_a, float lat_b, float lon_a, float lon_b, float lat, float lon){
-  float min_lat, max_lat, min_lon, max_lon, delta;
-  delta = 0,005/111; //delta 5 meters
-  if (lat_a > lat_b){
-      min_lat = lat_b - delta;
-      max_lat = lat_a + delta;
-  }
-  else{
-      min_lat = lat_a - delta;
-      max_lat = lat_b + delta;
-  };
-  if (lon_a > lon_b){
-      min_lon = lon_b - delta;
-      max_lon = lon_a + delta;
-  }
-  else{
-      min_lon = lon_a - delta;
-      max_lon = lon_b + delta;
-  };
-  if ((lat >= min_lat)&&(lat <= max_lat)&&(lon >= min_lon)&&(lon <= max_lon))
-      return true;
-  return false;
+
+float det(float a, float b, float c, float d){
+  return a*d - b*c;
+}
+
+boolean between(double a, double b, double c){
+  return min(a,b) <= c + EPS && c <= max(a,b) + EPS;
+}
+
+void swap(double &a, double &b){
+  double temp;
+  temp = a;
+  a = b;
+  b = temp;
+}
+
+boolean intersect_line(double a, double b, double c, double d){
+   if (a > b) swap(a, b);
+   if (c > d) swap(c, d);
+   return max(a,c) <= min(b,d);
+}
+
+boolean get_line_intersection(pt p0, pt p1, pt p2, pt p3){
+  pt s10, s32;
+  double c1, c2, denom;
+  s10.x = p1.x-p0.x;  s10.y = p1.y-p0.y;   
+  s32.x = p3.x-p2.x;  s32.y = p3.y-p2.y;  
+  denom = det (s10.y, s10.x, s32.y, s32.x);
+//  Serial.println(s10.y, 10);
+//  Serial.println(s10.x, 10);
+//  Serial.println(s32.y, 10);
+//  Serial.println(s32.x, 10);
+//  Serial.println(denom, 15);
+  if (denom != 0) { // lines are not collinear
+    c1 = s10.y*p0.x + s10.x*p0.y;
+    c2 = s32.y*p2.x + s32.x*p2.y;
+//    Serial.println(c1, 7);
+//    Serial.println(c2, 7);
+    //find crossing point (x,y)
+    double x = det (c1, s10.x, c2, s32.x) * 1.0 / denom;
+    double y = det (s10.y, c1, s32.y, c2) * 1.0 / denom;
+//    Serial.println(x, 7);
+//    Serial.println(y, 7);
+    return between (p0.x, p1.x, x) && between (p0.y, p1.y, y)
+           && between (p2.x, p3.x, x) && between (p2.y, p3.y, y);
+	}
+  else //lines are collinear
+    return det (s10.y, c1, s32.y, c2) == 0 && det (s10.x, c1, s32.x, c2) == 0
+		&& intersect_line (p0.x, p1.x, p2.x, p3.x)
+		&& intersect_line (p0.y, p1.y, p2.y, p3.y);
 }
 
 
@@ -483,6 +521,5 @@ void can_send(){
   if (CAN[6].en)   
       CANbus.write(can_dof2);  
 }
-
 
 

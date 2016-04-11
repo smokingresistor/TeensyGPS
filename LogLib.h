@@ -1,6 +1,7 @@
 #ifndef LogLib_h
 #define LogLib_h
 #include <SD.h>
+#include <PString.h>
 #include <SPI.h>
 #include <ArduinoJson.h>
 #include <EEPROMex.h>
@@ -72,21 +73,21 @@ extern BMsg838 gps;
 extern String UTC_Time;
 extern float course_angle; 
 
-struct{
+struct CAN_DATA{
   boolean en;
   int id;
-}CAN[7];
+};
 
-struct{
+struct FLS_DATA{
   boolean en;
-  float lat_A;
-  float lon_A;
-  float lat_B;
-  float lon_B;
+  double lat_A;
+  double lon_A;
+  double lat_B;
+  double lon_B;
   int lineOut;
-  float maxSpeed;
-  float minSpeed;
-}FLS [3];
+  double maxSpeed;
+  double minSpeed;
+};
 
 struct DOF_DATA{
   float heading;
@@ -112,9 +113,18 @@ struct DOF_DATA{
   float temp;
 };
 
+struct pt{
+  double x;
+  double y;
+};
+
+const double EPS = 1E-9;
+
 extern float ax, ay, az, gx, gy, gz, mx, my, mz; 
 extern float heading, roll, pitch, yaw, temp, inclination; 
 extern float q[4];
 extern struct DOF_DATA att;
+extern struct CAN_DATA CAN[7];
+extern struct FLS_DATA FLS[3];
 
 #endif

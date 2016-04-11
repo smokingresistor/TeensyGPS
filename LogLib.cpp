@@ -101,6 +101,12 @@ String CAN_name[7] =  {"can00",
 String FLS_name[3] =  {"finish",
                        "pit_entry",
                        "pit_exit"};
+
+char buffer[1000];
+PString tpvstring(buffer, sizeof(buffer));
+char buffer2[1000];
+PString attstring(buffer2, sizeof(buffer2));
+
 String SetNulls(){
   String n; 
   int numNulls = 0;
@@ -210,6 +216,7 @@ void parseJSON() {
           CAN[i].id = config4 [CAN_name[i]][1];
       };
       classConfig[4] = config5["class"];
+      
       for (i = 0; i < 3; i++){
           FLS[i].en = config5 [FLS_name[i]][0];
           FLS[i].lat_A = config5 [FLS_name[i]][1];
@@ -266,19 +273,19 @@ void printJSON(){
         if (FLS[i].en)
             Serial.print(FLS_name[i]);
             Serial.print(": ");
-            Serial.print(FLS[i].lat_A);
+            Serial.print(FLS[i].lat_A, 7);
             Serial.print(" ");
-            Serial.print(FLS[i].lon_A);
+            Serial.print(FLS[i].lon_A, 7);
             Serial.print(" ");
-            Serial.print(FLS[i].lat_B);
+            Serial.print(FLS[i].lat_B, 7);
             Serial.print(" ");
-            Serial.print(FLS[i].lon_B);
+            Serial.print(FLS[i].lon_B, 7);
             Serial.print(" ");
             Serial.print(FLS[i].lineOut);
             Serial.print(" ");
-            Serial.print(FLS[i].minSpeed);
+            Serial.print(FLS[i].minSpeed, 7);
             Serial.print(" ");
-            Serial.print(FLS[i].maxSpeed);
+            Serial.print(FLS[i].maxSpeed, 7);
         Serial.print(" ");
     };
     Serial.println();
@@ -365,28 +372,38 @@ void dataFloat(float value, int mode){
     char outstr[21];
     dtostrf(value, 20, 12, outstr);
     if (gps.venus838data_raw.fixmode >= mode)
-        dataFile.print (outstr);
-    dataFile.print(",");
+        tpvstring.print (outstr);
+    tpvstring.print(",");
 }
 
+void dataFloatATT(float value, int mode){
+    char outstr[21];
+    dtostrf(value, 20, 12, outstr);
+    if (gps.venus838data_raw.fixmode >= mode)
+        attstring.print (outstr);
+    attstring.print(",");
+}
+
+
 void LogTPV(){
+     tpvstring.begin();
      Serial.println("Print TPV object"); 
      if (!dataFile) 
           dataFile = SD.open(namefile, FILE_WRITE);
-      dataFile.print("TPV,");
+      tpvstring.print("TPV,");
       if(TPV[0])
-          dataFile.print("Venus838,");       
+          tpvstring.print("Venus838,");    
       if(TPV[1]){
-          dataFile.print(gps.venus838data_raw.fixmode);
-          dataFile.print(",");   
+          tpvstring.print(gps.venus838data_raw.fixmode);
+          tpvstring.print(",");   
       };
       if(TPV[2]){
-          dataFile.print(gps.venus838data_raw.NumSV);
-          dataFile.print(",");  
+          tpvstring.print(gps.venus838data_raw.NumSV);
+          tpvstring.print(",");  
       };
       if(TPV[3]){
-          dataFile.print(UTC_Time);
-          dataFile.print(",");
+          tpvstring.print(UTC_Time);
+          tpvstring.print(",");
       };
       if(TPV[4])
           dataFloat(gps.venus838data_raw.Latitude, 1);
@@ -415,14 +432,16 @@ void LogTPV(){
       if(TPV[16])
           dataFloat(gps.venus838data_raw.vdop, 0);      
       if(TPV[17])
-          dataFloat(gps.venus838data_raw.tdop, 0);
+          dataFloat(gps.venus838data_raw.tdop, 0); 
       if(TPV[18]){
-          dataFile.print(checksums);  
-          dataFile.print(",");
+          tpvstring.print(checksums);  
+          tpvstring.print(",");
       };
+      dataFile.print(tpvstring);
 }
 
 void LogATT(){
+    attstring.begin();
     att.heading = heading;
     att.pitch = pitch;
     att.yaw = yaw;
@@ -447,61 +466,62 @@ void LogATT(){
     Serial.println("Print ATT object"); 
     if (!dataFile) 
          dataFile = SD.open(namefile, FILE_WRITE);
-    dataFile.print("ATT,");
+    attstring.print("ATT,");
     if(ATT[0])
-        dataFile.print("LSM9DS0TR,");
+        attstring.print("LSM9DS0TR,");
     if(ATT[1]){
-        dataFile.print(UTC_Time);
-        dataFile.print(",");
+        attstring.print(UTC_Time);
+        attstring.print(",");
     };
     if(ATT[2])
-        dataFloat(att.heading, 0);
+        dataFloatATT(att.heading, 0);
     if(ATT[3])
-        dataFloat(att.pitch, 0);
+        dataFloatATT(att.pitch, 0);
     if(ATT[4])
-        dataFloat(att.yaw, 0);
+        dataFloatATT(att.yaw, 0);
     if(ATT[5])
-        dataFloat(att.roll, 0);
+        dataFloatATT(att.roll, 0);
     if(ATT[6])
-        dataFloat(att.dip, 0);
+        dataFloatATT(att.dip, 0);
     if(ATT[7])
-        dataFloat(att.mag_len, 0);
+        dataFloatATT(att.mag_len, 0);
     if(ATT[8])
-        dataFloat(att.mag_x, 0);
+        dataFloatATT(att.mag_x, 0);
     if(ATT[9])
-        dataFloat(att.mag_y, 0);
+        dataFloatATT(att.mag_y, 0);
     if(ATT[10])
-        dataFloat(att.mag_z, 0);
+        dataFloatATT(att.mag_z, 0);
     if(ATT[11])
-        dataFloat(att.acc_len, 0);
+        dataFloatATT(att.acc_len, 0);
     if(ATT[12])
-        dataFloat(att.acc_x, 0);
+        dataFloatATT(att.acc_x, 0);
     if(ATT[13])
-        dataFloat(att.acc_y, 0);
+        dataFloatATT(att.acc_y, 0);
     if(ATT[14])
-        dataFloat(att.acc_z, 0);
+        dataFloatATT(att.acc_z, 0);
     if(ATT[15])
-        dataFloat(att.gyro_x, 0);
+        dataFloatATT(att.gyro_x, 0);
     if(ATT[16])
-        dataFloat(att.gyro_y, 0);
+        dataFloatATT(att.gyro_y, 0);
     if(ATT[17])
-        dataFloat(att.gyro_z, 0);
+        dataFloatATT(att.gyro_z, 0);
     if(ATT[18])
-        dataFloat(att.quat1, 0);
+        dataFloatATT(att.quat1, 0);
     if(ATT[19])
-        dataFloat(att.quat2, 0);
+        dataFloatATT(att.quat2, 0);
     if(ATT[20])
-        dataFloat(att.quat3, 0); 
+        dataFloatATT(att.quat3, 0); 
     if(ATT[21])
-        dataFloat(att.quat4, 0);
+        dataFloatATT(att.quat4, 0);
     if(ATT[22])
-        dataFloat(att.temp, 0);
+        dataFloatATT(att.temp, 0);
+    dataFile.print(attstring);
     dataFile.println();          
     dataFile.flush();
+    dataFile.close();
     filesize = dataFile.size();
     Serial.println("Datafile Saved");
     Serial.println(filesize);
-    dataFile.close();
 }
 
 boolean TIMECONV_GetJulianDateFromGPSTime(
