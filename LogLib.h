@@ -114,8 +114,8 @@ struct DOF_DATA{
 };
 
 struct pt{
-  double x;
-  double y;
+  double lat;
+  double lon;
 };
 
 const double EPS = 1E-9;

@@ -15,6 +15,8 @@
 #include <FlexCAN.h>
 #include <Metro.h>
 #include <PString.h>
+#define SIMPLEFIFO_LARGE
+#include <SimpleFIFO.h>
 
 const String fixmodmask[]={"no fix", "2D", "3D", "3D+DGNSS"};
 /* This sample code demonstrates the normal use of the binary message of 
@@ -51,22 +53,15 @@ KalmanFilter filter;
 KalmanFilterVA filterVA;
 
 union conv lat, lon, lat_fil, lon_fil;
-union conv_short alt, vel, alt_fil, vel_fil, course, lap_dist, dof_roll, dof_pitch, dof_yaw, pressure, acc_x, acc_y, acc_z, q1, q2, q3, q4;
+union conv_short alt, vel, alt_fil, vel_fil, course, dof_roll, dof_pitch, dof_yaw, pressure, acc_x, acc_y, acc_z, q1, q2, q3, q4;
 
 int led = 13;
-int pin_beacon=21;
 
 boolean led_on=1;
-boolean beacon_output=1;
 boolean file_cutted=false;
 
 double t0,t1,dt=0;
 uint8_t sats,fix;
-const float lat_beacon[4]={45.618967, 2.760700  , 14.958108,    45.533341};
-const float lon_beacon[4]={9.281226,  101.738322, 103.085608,   10.219222};
-//                        0 Monza     1 Sepang   2 Buri ram     3 Via XX Settembre
-
-const float beacon_distance=9; //radious in m for lap beacon trigger
 
 boolean log_en;
 int newlog, rate, can_speed, max_filesize, filesize, log_type, trig, intv;
@@ -80,8 +75,36 @@ float ax, ay, az, gx, gy, gz, mx, my, mz; // variables to hold latest sensor dat
 float heading, roll, pitch, yaw, temp, inclination; 
 float q[4] = {1.0f, 0.0f, 0.0f, 0.0f};    // vector to hold quaternion
 
+/////////////////////////////////////
+// trigger line virables
+boolean beacon_output=1;
+typedef struct
+{
+     double p0_lat;
+     double p0_lon;
+     double p1_lat;
+     double p1_lon;
+}  line;
+
+line beacons[3];
+int pin_beacon[3] = {21, 21, 21};
+union conv_short lap_dist, lap_time;
+//////////////////////////////////////
+
+const int bearing_buffer=10;
+SimpleFIFO<float,bearing_buffer> Lat_buffer;
+SimpleFIFO<float,bearing_buffer> Long_buffer;
+
+//////////////////////////////////////
+
 void setup()
 {
+  //intizialize the fifo buffer with garbage
+  for (int i=0; i < bearing_buffer; i++)
+  {
+    Lat_buffer.enqueue(0.0);
+    Long_buffer.enqueue(0.0);
+  }
   Serial.begin(115200); 
   sensor_9dof_configure();
   delay(1000);
@@ -127,8 +150,15 @@ void setup()
     
   if (beacon_output==true)
     { 
-      pinMode(pin_beacon, OUTPUT);
-      digitalWrite(pin_beacon,HIGH);
+      for (int i=0; i<3; i++){
+        pinMode(pin_beacon[i], OUTPUT);
+        digitalWrite(pin_beacon[i],HIGH);
+        if (FLS[i].en)
+          beacons[i].p0_lat = FLS[i].lat_A;
+          beacons[i].p0_lon = FLS[i].lon_A;
+          beacons[i].p1_lat = FLS[i].lat_B;
+          beacons[i].p1_lon = FLS[i].lon_B;
+      }
       Serial.println("Lap beacon enabled");
     }
   Serial2.begin(115200);
@@ -200,7 +230,9 @@ void loop()
     Serial.print("UTC time: ");
     UTC_Time = GetUTCTime(gps.venus838data_raw.gps_week, gps.venus838data_raw.timeofweek);
     Serial.println(UTC_Time);
-    //course_angle = gps.course_to(gps.venus838data_filter.Longitude, gps.venus838data_filter.Latitude, 0 , 0);          
+    Lat_buffer.enqueue(gps.venus838data_raw.Latitude);
+    Long_buffer.enqueue(gps.venus838data_raw.Longitude);                
+    course.f = gps.course_to(gps.venus838data_raw.Latitude, gps.venus838data_raw.Longitude, Lat_buffer.dequeue(), Long_buffer.dequeue());   
     sensor_9dof_read();   
     if (beacon_output)
         check_beacon_dist();
@@ -264,68 +296,56 @@ void loop()
 
 void check_beacon_dist(){
    float distance;
-   boolean line_cross[3];
-   pt pointA, pointB, curr_gps, prev_gps;
-   //distance = gps.distance_between(gps.venus838data_filter.Latitude,gps.venus838data_filter.Longitude,blat,blong); // distance to beacon
-   curr_gps.x = gps.venus838data_filter.Latitude;
-   curr_gps.y = gps.venus838data_filter.Longitude;
-//   curr_gps.x = 54.7386700;
-//   curr_gps.y = 55.9748100;
-//   prev_gps.x = 54.7386100;
-//   prev_gps.y = 55.9747700;
-   for (int i = 0; i < 3; i++){
-     if (FLS[i].en)
-//       pointA.x = 54.7386700;
-//       pointA.y = 55.9747200;
-//       pointB.x = 54.7386400;
-//       pointB.y = 55.9748600;
-       pointA.x = FLS[i].lat_A;
-       pointA.y = FLS[i].lon_A;
-       pointB.x = FLS[i].lat_B;
-       pointB.y = FLS[i].lon_B;
-//       Serial.print(pointA.x, 7);
-//       Serial.print(" ");
-//       Serial.println(pointA.y, 7);
-//       Serial.print(pointB.x, 7);
-//       Serial.print(" ");
-//       Serial.println(pointB.y, 7);
-       line_cross[i] = get_line_intersection (pointA, pointB, prev_gps, curr_gps);
-   };
-   prev_gps.x = curr_gps.x;
-   prev_gps.y = curr_gps.y;
-   if (line_cross[0])
-     Serial.println("Finish line crossing");
-   if (line_cross[1])
-     Serial.println("Pit entry line crossing");
-   if (line_cross[2])
-     Serial.println("Pit exit line crossing");
-   if (((line_cross[0] && (beacon_timeout.check()==true)))||(file_time_cut.check()==true)){ //check distance or time_cut
-     Serial.println("Finish line crossing");
-     if (file_time_cut.check()==true)
-           Serial.println("Time Cut Trigger"); 
-     //Rise level of beacon pin output or lowers for McLaren
-     digitalWrite(pin_beacon,LOW); 
-     if (can_speed){
-         can_lap.buf[0]=1; 
-     }                 
-     if (sd_datalog && log_output) {
-         if (newlog==1) {
-             dataFile.flush();
-             dataFile.close(); 
-             Serial.println("Create new log");
-             create_newlog();
+   boolean crossing_true;
+   pt curr_gps, prev_gps;
+   curr_gps.lat = gps.venus838data_filter.Latitude;
+   curr_gps.lon = gps.venus838data_filter.Longitude;
+   for (int i = 0; i < (sizeof(beacons))/(sizeof(beacons[0])); i++){
+     if (FLS[i].en){
+       crossing_true = get_line_intersection (beacons[i].p0_lat, beacons[i].p0_lon, beacons[i].p1_lat, beacons[i].p1_lon, prev_gps.lat, prev_gps.lon, curr_gps.lat, curr_gps.lon);
+       if (crossing_true && (beacon_timeout.check()==true)&&(gps.venus838data_raw.velocity>0)){
+         if (i==0)
+           Serial.println("Finish line crossing");
+         if (i==1)
+           Serial.println("Pit entry line crossing");
+         if (i==2)
+           Serial.println("Pit exit line crossing");
+         if (file_time_cut.check()==true)
+               Serial.println("Time Cut Trigger"); 
+         //Rise level of beacon pin output or lowers for McLaren
+         lap_dist.f = 0;
+         lap_time.f = 0;
+         digitalWrite(pin_beacon[0],LOW); 
+         can_lap.buf[0] = i+1;               
+         if (sd_datalog && log_output) {
+             // if (file_time_cut.check()==true) dataFile.println("Time Trigger");
+             if (newlog==1) {
+                 Serial.println("Create new log");
+                 create_newlog();
+                 if (!dataFile) 
+                    dataFile = SD.open(namefile, FILE_WRITE);
+                 dataFile.print("Beacon Trigger ");
+                 dataFile.print(i+1);
+                 dataFile.flush();
+                 dataFile.close(); 
+             }
          }
+         beacon_timeout.reset();
+         beacon_trigger.reset();
+         file_time_cut.reset();
+        }
      }
-     beacon_timeout.reset();
-     beacon_trigger.reset();
-     file_time_cut.reset();
-  }
-  else {
-     if (beacon_trigger.check()==true) {
-          digitalWrite(pin_beacon,HIGH);
-          can_lap.buf[0]=0;
-     }
-  }
+   }//for
+   if ((beacon_trigger.check()==true)&&(can_lap.buf[0]>0))
+       {
+       //McLaren High
+       digitalWrite(pin_beacon[0],LOW);
+       digitalWrite(pin_beacon[1],LOW);
+       digitalWrite(pin_beacon[2],LOW);
+       can_lap.buf[0]=0;
+       }
+   prev_gps.lat = curr_gps.lat;
+   prev_gps.lon = curr_gps.lon;
 }
 
 boolean check_intervals(){
@@ -386,36 +406,44 @@ boolean intersect_line(double a, double b, double c, double d){
    return max(a,c) <= min(b,d);
 }
 
-boolean get_line_intersection(pt p0, pt p1, pt p2, pt p3){
-  pt s10, s32;
-  double c1, c2, denom;
-  s10.x = p1.x-p0.x;  s10.y = p1.y-p0.y;   
-  s32.x = p3.x-p2.x;  s32.y = p3.y-p2.y;  
-  denom = det (s10.y, s10.x, s32.y, s32.x);
-//  Serial.println(s10.y, 10);
-//  Serial.println(s10.x, 10);
-//  Serial.println(s32.y, 10);
-//  Serial.println(s32.x, 10);
-//  Serial.println(denom, 15);
-  if (denom != 0) { // lines are not collinear
-    c1 = s10.y*p0.x + s10.x*p0.y;
-    c2 = s32.y*p2.x + s32.x*p2.y;
-//    Serial.println(c1, 7);
-//    Serial.println(c2, 7);
-    //find crossing point (x,y)
-    double x = det (c1, s10.x, c2, s32.x) * 1.0 / denom;
-    double y = det (s10.y, c1, s32.y, c2) * 1.0 / denom;
-//    Serial.println(x, 7);
-//    Serial.println(y, 7);
-    return between (p0.x, p1.x, x) && between (p0.y, p1.y, y)
-           && between (p2.x, p3.x, x) && between (p2.y, p3.y, y);
-	}
-  else //lines are collinear
-    return det (s10.y, c1, s32.y, c2) == 0 && det (s10.x, c1, s32.x, c2) == 0
-		&& intersect_line (p0.x, p1.x, p2.x, p3.x)
-		&& intersect_line (p0.y, p1.y, p2.y, p3.y);
+boolean get_line_intersection(float p0_x, float p0_y, float p1_x, float p1_y,float p2_x, float p2_y, float p3_x, float p3_y)
+{
+    float s02_x, s02_y, s10_x, s10_y, s32_x, s32_y, s_numer, t_numer, denom, t;
+    float i_x,i_y=0;
+    s10_x = p1_x - p0_x;
+    s10_y = p1_y - p0_y;
+    s32_x = p3_x - p2_x;
+    s32_y = p3_y - p2_y;
+ 
+    denom = s10_x * s32_y - s32_x * s10_y;
+    if (denom == 0)
+        return 0; // Collinear
+    bool denomPositive = denom > 0;
+ 
+    s02_x = p0_x - p2_x;
+    s02_y = p0_y - p2_y;
+    s_numer = s10_x * s02_y - s10_y * s02_x;
+    if ((s_numer < 0) == denomPositive)
+        return 0; // No collision
+ 
+    t_numer = s32_x * s02_y - s32_y * s02_x;
+    if ((t_numer < 0) == denomPositive)
+        return 0; // No collision
+ 
+    if (((s_numer > denom) == denomPositive) || ((t_numer > denom) == denomPositive))
+        return 0; // No collision
+    // Collision detected
+   
+        t = t_numer / denom;
+ 
+        i_x = p0_x + (t * s10_x);
+        Serial.println(i_x, 7);
+ 
+        i_y = p0_y + (t * s10_y);
+        Serial.println(i_y, 7);
+ 
+    return true;
 }
-
 
 void can_send(){
   lat.f=gps.venus838data_raw.Latitude*1E7; 
