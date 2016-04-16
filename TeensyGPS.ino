@@ -47,6 +47,7 @@ BMsg838 gps;
 Metro beacon_timeout = Metro(30000);
 Metro beacon_trigger = Metro(250);
 Metro file_time_cut= Metro(300000);
+Metro led_blink= Metro(50);
 
 /*kalman filter class*/
 KalmanFilter filter;
@@ -74,7 +75,7 @@ struct FLS_DATA FLS[3];
 float ax, ay, az, gx, gy, gz, mx, my, mz; // variables to hold latest sensor data values 
 float heading, roll, pitch, yaw, temp, inclination; 
 float q[4] = {1.0f, 0.0f, 0.0f, 0.0f};    // vector to hold quaternion
-
+pt prev_gps;  //curr_gps removed, structs of points defined in loglib.h
 /////////////////////////////////////
 // trigger line virables
 boolean beacon_output=1;
@@ -84,10 +85,13 @@ typedef struct
      double p0_lon;
      double p1_lat;
      double p1_lon;
+     double min_spd;  // minimum speed for trigger in m/s
+     double max_spd;  // maximum speed for trigger in m/s
+     bool output_level; //output level of the digital line
 }  line;
 
 line beacons[3];
-int pin_beacon[3] = {21, 21, 21};
+int pin_beacon[3] = {26, 27, 28}; //26 27 28 for Bt board 33 32 31 for new board
 union conv_short lap_dist, lap_time;
 //////////////////////////////////////
 
@@ -131,6 +135,7 @@ void setup()
   if (can_speed) 
     {       
        can_pos.id=CAN[0].id;
+       Serial.println(CAN[0].id,HEX);
        can_pos.len = 8;
        can_nav.id=CAN[1].id;
        can_nav.len = 8;
@@ -152,12 +157,23 @@ void setup()
     { 
       for (int i=0; i<3; i++){
         pinMode(pin_beacon[i], OUTPUT);
-        digitalWrite(pin_beacon[i],HIGH);
         if (FLS[i].en)
           beacons[i].p0_lat = FLS[i].lat_A;
           beacons[i].p0_lon = FLS[i].lon_A;
           beacons[i].p1_lat = FLS[i].lat_B;
           beacons[i].p1_lon = FLS[i].lon_B;
+          beacons[i].min_spd = FLS[i].minSpeed;
+          beacons[i].max_spd = FLS[i].maxSpeed;
+          if (FLS[i].lineOut==1)
+            {
+              beacons[i].output_level=0;               
+            }
+         if ((FLS[i].lineOut==2)||(FLS[i].lineOut==0))
+            {
+              beacons[i].output_level=1;
+            }
+         digitalWrite(pin_beacon[i],!beacons[i].output_level);
+        // digitalWrite(pin_beacon[i],HIGH);
       }
       Serial.println("Lap beacon enabled");
     }
@@ -179,7 +195,8 @@ void setup()
               GPSSoftVersiondata* versioninfo=gps.ResponseSoftVersion();
               printSoftversion(versioninfo);        
       }     
-} 
+
+}  //setup 
 
 //receiv Navigation binary data from GPS receiver and find positopn and velocity data 
 //and after do kalmanfiltering 
@@ -231,8 +248,10 @@ void loop()
     UTC_Time = GetUTCTime(gps.venus838data_raw.gps_week, gps.venus838data_raw.timeofweek);
     Serial.println(UTC_Time);
     Lat_buffer.enqueue(gps.venus838data_raw.Latitude);
-    Long_buffer.enqueue(gps.venus838data_raw.Longitude);                
-    course.f = gps.course_to(gps.venus838data_raw.Latitude, gps.venus838data_raw.Longitude, Lat_buffer.dequeue(), Long_buffer.dequeue());   
+    Long_buffer.enqueue(gps.venus838data_raw.Longitude);     
+    prev_gps.lat=Lat_buffer.dequeue();
+    prev_gps.lon=Long_buffer.dequeue();              
+    course.f = gps.course_to(gps.venus838data_raw.Latitude, gps.venus838data_raw.Longitude, prev_gps.lat, prev_gps.lon);   
     sensor_9dof_read();   
     if (beacon_output)
         check_beacon_dist();
@@ -254,8 +273,12 @@ void loop()
         if (log_type==2) //interval log
             log_en = check_intervals();
         if (log_en){
-            led_on=!led_on;
-            digitalWrite(led,led_on);
+            if (led_blink.check())
+              {
+               led_on=!led_on;
+               digitalWrite(led,led_on);
+               led_blink.reset();
+              }
             Serial.println(millis());
             LogTPV(); // log TPV object
             LogATT(); // log ATT object  
@@ -297,13 +320,17 @@ void loop()
 void check_beacon_dist(){
    float distance;
    boolean crossing_true;
-   pt curr_gps, prev_gps;
-   curr_gps.lat = gps.venus838data_filter.Latitude;
-   curr_gps.lon = gps.venus838data_filter.Longitude;
+   // pt curr_gps, prev_gps; //moved to global
+   //curr_gps.lat = gps.venus838data_filter.Latitude;
+   //curr_gps.lon = gps.venus838data_filter.Longitude;
    for (int i = 0; i < (sizeof(beacons))/(sizeof(beacons[0])); i++){
-     if (FLS[i].en){
-       crossing_true = get_line_intersection (beacons[i].p0_lat, beacons[i].p0_lon, beacons[i].p1_lat, beacons[i].p1_lon, prev_gps.lat, prev_gps.lon, curr_gps.lat, curr_gps.lon);
-       if (crossing_true && (beacon_timeout.check()==true)&&(gps.venus838data_raw.velocity>0)){
+     if (FLS[i].en)
+      {
+       crossing_true = get_line_intersection (beacons[i].p0_lat, beacons[i].p0_lon, beacons[i].p1_lat, beacons[i].p1_lon, prev_gps.lat, prev_gps.lon, gps.venus838data_raw.Latitude, gps.venus838data_raw.Longitude);
+       if (crossing_true && (beacon_timeout.check()==true)&&(gps.venus838data_raw.velocity>0))
+        {
+          if ((gps.venus838data_raw.velocity>beacons[i].min_spd )&&(gps.venus838data_raw.velocity<beacons[i].min_spd))
+          {
          if (i==0)
            Serial.println("Finish line crossing");
          if (i==1)
@@ -312,10 +339,10 @@ void check_beacon_dist(){
            Serial.println("Pit exit line crossing");
          if (file_time_cut.check()==true)
                Serial.println("Time Cut Trigger"); 
-         //Rise level of beacon pin output or lowers for McLaren
+         //Triggers digital outputs according to setup
+         digitalWrite(pin_beacon[i],beacons[i].output_level); 
          lap_dist.f = 0;
          lap_time.f = 0;
-         digitalWrite(pin_beacon[0],LOW); 
          can_lap.buf[0] = i+1;               
          if (sd_datalog && log_output) {
              // if (file_time_cut.check()==true) dataFile.println("Time Trigger");
@@ -328,24 +355,25 @@ void check_beacon_dist(){
                  dataFile.print(i+1);
                  dataFile.flush();
                  dataFile.close(); 
-             }
-         }
+             } //end if newlog
+         } //end if sd datalog and log output
          beacon_timeout.reset();
          beacon_trigger.reset();
-         file_time_cut.reset();
-        }
-     }
+         file_time_cut.reset();         
+       }  //end if speed range
+     } //end if crossing true
+    }  //end if FLS enable
    }//for
    if ((beacon_trigger.check()==true)&&(can_lap.buf[0]>0))
        {
-       //McLaren High
-       digitalWrite(pin_beacon[0],LOW);
-       digitalWrite(pin_beacon[1],LOW);
-       digitalWrite(pin_beacon[2],LOW);
+       //Reset the digital lines according to the config
+       digitalWrite(pin_beacon[0],!beacons[0].output_level);
+       digitalWrite(pin_beacon[1],!beacons[1].output_level);
+       digitalWrite(pin_beacon[2],!beacons[2].output_level);
        can_lap.buf[0]=0;
        }
-   prev_gps.lat = curr_gps.lat;
-   prev_gps.lon = curr_gps.lon;
+   //prev_gps.lat = curr_gps.lat;
+   //prev_gps.lon = curr_gps.lon;
 }
 
 boolean check_intervals(){
@@ -446,6 +474,11 @@ boolean get_line_intersection(float p0_x, float p0_y, float p1_x, float p1_y,flo
 }
 
 void can_send(){
+              if (led_blink.check())
+              {
+                 led_on=!led_on;
+                 digitalWrite(led,led_on);
+              }
   lat.f=gps.venus838data_raw.Latitude*1E7; 
   lat_fil.f=gps.venus838data_filter.Latitude*1E7;
   lon.f=gps.venus838data_raw.Longitude*1E7;
