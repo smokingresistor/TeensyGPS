@@ -516,10 +516,9 @@ void LogATT(){
     if(ATT[22])
         dataFloatATT(att.temp, 0);
     dataFile.print(attstring);
-    dataFile.println();          
-    dataFile.flush();
+    dataFile.println();     
+    filesize = dataFile.size();    
     dataFile.close();
-    filesize = dataFile.size();
     Serial.println("Datafile Saved");
     Serial.println(filesize);
 }

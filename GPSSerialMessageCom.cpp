@@ -68,9 +68,10 @@ const byte BinaryMsgHeader[]={0xA0,0xA1};
         while(!Serial2.available()){
             delay(10);
         }
+        
         c=Serial2.read();
-//        Serial.print(c);
-//        Serial.print(" ");
+//          Serial.print(c);
+//          Serial.print(" ");
         
         if(pos<2){
           if(c==BinaryMsgHeader[pos]){
@@ -94,13 +95,15 @@ const byte BinaryMsgHeader[]={0xA0,0xA1};
          else{
             if(pos<payloadlen+7){
               buf[pos++]=c;
-              if((pos==payloadlen+7)||((buf[pos-2]==0x0D)&&(buf[pos-1]==0x0A)))
-                    return pos;
+              if((pos==payloadlen+7)||((buf[pos-2]==0x0D)&&(buf[pos-1]==0x0A))){
+                 while(Serial2.available()){
+                    Serial2.read();
+                 }
+                 return pos;
+              }
             }
-             
         }
    }         
-    Serial.println(); 
     return pos;  
 }
 
