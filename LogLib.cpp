@@ -30,6 +30,8 @@ StaticJsonBuffer<500> jsonBuffer4;
 StaticJsonBuffer<500> jsonBuffer5;
 const char* classConfig[number_JSON_object];
 
+char LineOut_name[3][10] = {"Disabled","High","Low"};
+
 float CNF [27];
 boolean TPV [22];
 boolean ATT [24];
@@ -101,7 +103,6 @@ String CAN_name[7] =  {"can00",
 String FLS_name[3] =  {"finish",
                        "pit_entry",
                        "pit_exit"};
-
 char buffer[1000];
 PString tpvstring(buffer, sizeof(buffer));
 char buffer2[1000];
@@ -223,7 +224,13 @@ void parseJSON() {
           FLS[i].lon_A = config5 [FLS_name[i]][2];
           FLS[i].lat_B = config5 [FLS_name[i]][3];
           FLS[i].lon_B = config5 [FLS_name[i]][4];
-          FLS[i].lineOut = config5 [FLS_name[i]][5];
+          FLS[i].lineOutString = config5 [FLS_name[i]][5];
+          if (strcmp(FLS[i].lineOutString, LineOut_name[0])==0)
+              FLS[i].lineOut = 0;
+          else if (strcmp(FLS[i].lineOutString, LineOut_name[1])==0)
+              FLS[i].lineOut = 1;
+          else if (strcmp(FLS[i].lineOutString, LineOut_name[2])==0)
+              FLS[i].lineOut = 2;   
           FLS[i].maxSpeed = config5 [FLS_name[i]][6];
           FLS[i].minSpeed = config5 [FLS_name[i]][7];
       };    
@@ -289,7 +296,6 @@ void printJSON(){
         Serial.print(" ");
     };
     Serial.println();
-    
 }
 
 String check_TPV(int num){

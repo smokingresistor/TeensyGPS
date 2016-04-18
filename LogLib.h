@@ -84,10 +84,13 @@ struct FLS_DATA{
   double lon_A;
   double lat_B;
   double lon_B;
+  const char* lineOutString;
   int lineOut;
   double maxSpeed;
   double minSpeed;
 };
+
+extern char LineOut_name[3][10];
 
 struct DOF_DATA{
   float heading;

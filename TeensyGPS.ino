@@ -321,8 +321,6 @@ void check_beacon_dist(){
    float distance;
    boolean crossing_true;
    // pt curr_gps, prev_gps; //moved to global
-   //curr_gps.lat = gps.venus838data_filter.Latitude;
-   //curr_gps.lon = gps.venus838data_filter.Longitude;
    for (int i = 0; i < (sizeof(beacons))/(sizeof(beacons[0])); i++){
      if (FLS[i].en)
       {
@@ -372,8 +370,6 @@ void check_beacon_dist(){
        digitalWrite(pin_beacon[2],!beacons[2].output_level);
        can_lap.buf[0]=0;
        }
-   //prev_gps.lat = curr_gps.lat;
-   //prev_gps.lon = curr_gps.lon;
 }
 
 boolean check_intervals(){
@@ -410,28 +406,6 @@ boolean check_constr(float value, float min, float max){
   if ((min < value)&&(value < max))
     return true;
   return false;
-}
-
-
-float det(float a, float b, float c, float d){
-  return a*d - b*c;
-}
-
-boolean between(double a, double b, double c){
-  return min(a,b) <= c + EPS && c <= max(a,b) + EPS;
-}
-
-void swap(double &a, double &b){
-  double temp;
-  temp = a;
-  a = b;
-  b = temp;
-}
-
-boolean intersect_line(double a, double b, double c, double d){
-   if (a > b) swap(a, b);
-   if (c > d) swap(c, d);
-   return max(a,c) <= min(b,d);
 }
 
 boolean get_line_intersection(float p0_x, float p0_y, float p1_x, float p1_y,float p2_x, float p2_y, float p3_x, float p3_y)
@@ -479,30 +453,30 @@ void can_send(){
                  led_on=!led_on;
                  digitalWrite(led,led_on);
               }
-  lat.f=gps.venus838data_raw.Latitude*1E7; 
-  lat_fil.f=gps.venus838data_filter.Latitude*1E7;
-  lon.f=gps.venus838data_raw.Longitude*1E7;
-  lon_fil.f=gps.venus838data_filter.Longitude*1E7;
-  alt.f=gps.venus838data_raw.SealevelAltitude*10;
-  alt_fil.f=gps.venus838data_filter.SealevelAltitude*10;
-  vel.f=gps.venus838data_raw.velocity*10*3.6;
-  vel_fil.f=gps.venus838data_filter.velocity*10*3.6;
-  course.f=course_angle*100;
+  lat.f=(int32_t)(gps.venus838data_raw.Latitude*1E7); 
+  lat_fil.f=(int32_t)(gps.venus838data_filter.Latitude*1E7);
+  lon.f=(int32_t)(gps.venus838data_raw.Longitude*1E7);
+  lon_fil.f=(int32_t)(gps.venus838data_filter.Longitude*1E7);
+  alt.f=(int16_t)(gps.venus838data_raw.SealevelAltitude*10);
+  alt_fil.f=(int16_t)(gps.venus838data_filter.SealevelAltitude*10);
+  vel.f=(int16_t)(gps.venus838data_raw.velocity*10*3.6);
+  vel_fil.f=(int16_t)(gps.venus838data_filter.velocity*10*3.6);
+  course.f=(int16_t)(course_angle*100);
   sats=gps.venus838data_raw.NumSV;
   fix=gps.venus838data_raw.fixmode;
   fix=fix<<4;
-  lap_dist.f = 0*4;          //to do
-  dof_roll.f = att.roll;
-  dof_pitch.f = att.pitch;
-  dof_yaw.f = att.yaw*10;
-  pressure.f = 0;          //to do
-  acc_x.f = att.acc_x*100;
-  acc_y.f = att.acc_y*100;
-  acc_z.f = att.acc_z*100;
-  q1.f = att.quat1;
-  q2.f = att.quat2;
-  q3.f = att.quat3;
-  q4.f = att.quat4;
+  lap_dist.f = (int16_t)(0*4);          //to do
+  dof_roll.f = (int16_t)att.roll;
+  dof_pitch.f = (int16_t)att.pitch;
+  dof_yaw.f = (int16_t)(att.yaw*10);
+  pressure.f = (int16_t)0;          //to do
+  acc_x.f = (int16_t)(att.acc_x*100);
+  acc_y.f = (int16_t)(att.acc_y*100);
+  acc_z.f = (int16_t)(att.acc_z*100);
+  q1.f = (int16_t)(att.quat1);
+  q2.f = (int16_t)(att.quat2);
+  q3.f = (int16_t)(att.quat3);
+  q4.f = (int16_t)(att.quat4);
   //raw data
   //1 frame
   can_pos.buf[0]=lat.b[3];
