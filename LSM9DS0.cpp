@@ -13,6 +13,27 @@ int DRDYG  = 12; // DRDYG  tells us when gyro data is ready
 #define beta sqrt(3.0f / 4.0f) * GyroMeasError   // compute beta
 #define zeta sqrt(3.0f / 4.0f) * GyroMeasDrift   // compute zeta
 
+
+//For Mahoni
+
+#define GyroMeasError PI * (40.0f / 180.0f)       // gyroscope measurement error in rads/s (shown as 3 deg/s)
+#define GyroMeasDrift PI * (1.0f / 180.0f)      // gyroscope measurement drift in rad/s/s (shown as 0.0 deg/s/s)
+// There is a tradeoff in the beta parameter between accuracy and response speed.
+// In the original Madgwick study, beta of 0.041 (corresponding to GyroMeasError of 2.7 degrees/s) was found to give optimal accuracy.
+// However, with this value, the LSM9SD0 response time is about 10 seconds to a stable initial quaternion.
+// Subsequent changes also require a longish lag time to a stable output, not fast enough for a quadcopter or robot car!
+// By increasing beta (GyroMeasError) by about a factor of fifteen, the response time constant is reduced to ~2 sec
+// I haven't noticed any reduction in solution accuracy. This is essentially the I coefficient in a PID control sense; 
+// the bigger the feedback coefficient, the faster the solution converges, usually at the expense of accuracy. 
+// In any case, this is the free parameter in the Madgwick filtering and fusion scheme.
+#define beta sqrt(3.0f / 4.0f) * GyroMeasError   // compute beta
+#define zeta sqrt(3.0f / 4.0f) * GyroMeasDrift   // compute zeta, the other free parameter in the Madgwick scheme usually set to a small or zero value
+#define Kp 2.0f * 5.0f // these are the free parameters in the Mahony filter and fusion scheme, Kp for proportional feedback, Ki for integral
+#define Ki 0.0f
+float eInt[3] = {0.0f, 0.0f, 0.0f};
+
+
+
 static const int16_t dec_tbl[37][73] = \
 { \
     {150,145,140,135,130,125,120,115,110,105,100,95,90,85,80,75,70,65,60,55,50,45,40,35,30,25,20,15,10,5,0,-4,-9,-14,-19,-24,-29,-34,-39,-44,-49,-54,-59,-64,-69,-74,-79,-84,-89,-94,-99,104,109,114,119,124,129,134,139,144,149,154,159,164,169,174,179,175,170,165,160,155,150}, \
@@ -84,6 +105,99 @@ float get_declination(float lat, float lon)
     decmax = (lon - lonmin) / 5 * (decNE - decNW) + decNW;
     return (lat - latmin) / 5 * (decmax - decmin) + decmin;
 }
+
+   void MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz)
+        {
+            float q1 = q[0], q2 = q[1], q3 = q[2], q4 = q[3];   // short name local variable for readability
+            float norm;
+            float hx, hy, bx, bz;
+            float vx, vy, vz, wx, wy, wz;
+            float ex, ey, ez;
+            float pa, pb, pc;
+
+            // Auxiliary variables to avoid repeated arithmetic
+            float q1q1 = q1 * q1;
+            float q1q2 = q1 * q2;
+            float q1q3 = q1 * q3;
+            float q1q4 = q1 * q4;
+            float q2q2 = q2 * q2;
+            float q2q3 = q2 * q3;
+            float q2q4 = q2 * q4;
+            float q3q3 = q3 * q3;
+            float q3q4 = q3 * q4;
+            float q4q4 = q4 * q4;   
+
+            // Normalise accelerometer measurement
+            norm = sqrt(ax * ax + ay * ay + az * az);
+            if (norm == 0.0f) return; // handle NaN
+            norm = 1.0f / norm;        // use reciprocal for division
+            ax *= norm;
+            ay *= norm;
+            az *= norm;
+
+            // Normalise magnetometer measurement
+            norm = sqrt(mx * mx + my * my + mz * mz);
+            if (norm == 0.0f) return; // handle NaN
+            norm = 1.0f / norm;        // use reciprocal for division
+            mx *= norm;
+            my *= norm;
+            mz *= norm;
+
+            // Reference direction of Earth's magnetic field
+            hx = 2.0f * mx * (0.5f - q3q3 - q4q4) + 2.0f * my * (q2q3 - q1q4) + 2.0f * mz * (q2q4 + q1q3);
+            hy = 2.0f * mx * (q2q3 + q1q4) + 2.0f * my * (0.5f - q2q2 - q4q4) + 2.0f * mz * (q3q4 - q1q2);
+            bx = sqrt((hx * hx) + (hy * hy));
+            bz = 2.0f * mx * (q2q4 - q1q3) + 2.0f * my * (q3q4 + q1q2) + 2.0f * mz * (0.5f - q2q2 - q3q3);
+
+            // Estimated direction of gravity and magnetic field
+            vx = 2.0f * (q2q4 - q1q3);
+            vy = 2.0f * (q1q2 + q3q4);
+            vz = q1q1 - q2q2 - q3q3 + q4q4;
+            wx = 2.0f * bx * (0.5f - q3q3 - q4q4) + 2.0f * bz * (q2q4 - q1q3);
+            wy = 2.0f * bx * (q2q3 - q1q4) + 2.0f * bz * (q1q2 + q3q4);
+            wz = 2.0f * bx * (q1q3 + q2q4) + 2.0f * bz * (0.5f - q2q2 - q3q3);  
+
+            // Error is cross product between estimated direction and measured direction of gravity
+            ex = (ay * vz - az * vy) + (my * wz - mz * wy);
+            ey = (az * vx - ax * vz) + (mz * wx - mx * wz);
+            ez = (ax * vy - ay * vx) + (mx * wy - my * wx);
+            if (Ki > 0.0f)
+            {
+                eInt[0] += ex;      // accumulate integral error
+                eInt[1] += ey;
+                eInt[2] += ez;
+            }
+            else
+            {
+                eInt[0] = 0.0f;     // prevent integral wind up
+                eInt[1] = 0.0f;
+                eInt[2] = 0.0f;
+            }
+
+            // Apply feedback terms
+            gx = gx + Kp * ex + Ki * eInt[0];
+            gy = gy + Kp * ey + Ki * eInt[1];
+            gz = gz + Kp * ez + Ki * eInt[2];
+
+            // Integrate rate of change of quaternion
+            pa = q2;
+            pb = q3;
+            pc = q4;
+            q1 = q1 + (-q2 * gx - q3 * gy - q4 * gz) * (0.5f * deltat);
+            q2 = pa + (q1 * gx + pb * gz - pc * gy) * (0.5f * deltat);
+            q3 = pb + (q1 * gy - pa * gz + pc * gx) * (0.5f * deltat);
+            q4 = pc + (q1 * gz + pa * gy - pb * gx) * (0.5f * deltat);
+
+            // Normalise quaternion
+            norm = sqrt(q1 * q1 + q2 * q2 + q3 * q3 + q4 * q4);
+            norm = 1.0f / norm;
+            q[0] = q1 * norm;
+            q[1] = q2 * norm;
+            q[2] = q3 * norm;
+            q[3] = q4 * norm;
+ 
+        }
+        
 
 void MadgwickQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz)
 {
@@ -182,7 +296,7 @@ void sensor_9dof_configure()
   pinMode(INT2XM, INPUT);
   pinMode(DRDYG,  INPUT);
   dof.begin();
-  dof.setAccelScale(dof.A_SCALE_2G);
+  dof.setAccelScale(dof.A_SCALE_4G);
   dof.setGyroScale(dof.G_SCALE_245DPS);
   dof.setMagScale(dof.M_SCALE_2GS);
   // Set output data rates                   
@@ -238,7 +352,8 @@ void sensor_9dof_read()
   now = micros();
   deltat = ((now - lastUpdate)/1000000.0f); // set integration time by time elapsed since last filter update
   lastUpdate = now;
-  MadgwickQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f, mx, my, mz);
+  // MadgwickQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f, mx, my, mz);
+  MahonyQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f, mx, my, mz);
   print_9dof_data();
 }
 
@@ -276,6 +391,5 @@ void print_9dof_data()
   Serial.print(F(" "));
   Serial.println("**********************\n");
 }
-
 
 
