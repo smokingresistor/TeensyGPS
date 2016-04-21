@@ -80,7 +80,7 @@ struct DOF_DATA att;
 struct CAN_DATA CAN[7];
 struct FLS_DATA FLS[3];
 float ax, ay, az, gx, gy, gz, mx, my, mz; // variables to hold latest sensor data values 
-float heading, roll, pitch, yaw, temp, inclination, lap_distance, temp_x, temp_y, temp_z; 
+float heading, roll, pitch, yaw, temp, inclination, lap_distance; 
 float q[4] = {1.0f, 0.0f, 0.0f, 0.0f};    // vector to hold quaternion
 pt prev_gps;  //curr_gps removed, structs of points defined in loglib.h
 /////////////////////////////////////
@@ -267,39 +267,14 @@ void loop()
     laptime = laptime + dt;  //laptime in milliseconds
     
     temp=dt;
-    temp=temp/1000.0;
-    lap_distance=lap_distance+temp*gps.venus838data_raw.velocity;  //Lap distance in meters    
+    temp=temp/1000;  //dt in seconds
+    
+    lap_distance=lap_distance+temp*gps.venus838data_raw.velocity;  //Lap distance in meters   
     temp=temp/60;
     stint_duration = stint_duration + temp;  //stint duration in minutes
    
     sensor_9dof_read();   
-    att.heading = heading;
-    att.pitch = pitch;
-    att.yaw = yaw;
-    att.roll = roll;
-    att.dip = inclination;
-    att.mag_x = mx;
-    att.mag_y = my;
-    att.mag_z = mz;
-    temp_x = mx;
-    temp_y = my;
-    temp_z = mz;
-//    att.mag_len = (pow(temp_x, 2) + pow(temp_y, 2) + pow(temp_z, 2));
-    att.acc_x = ax;
-    att.acc_y = ay;
-    att.acc_z = az;
-    temp_x = ax;
-    temp_y = ay;
-    temp_z = az;
-//    att.acc_len = (pow(temp_x, 2) + pow(temp_y, 2) + pow(temp_z, 2));
-    att.gyro_x = gx;
-    att.gyro_y = gy;
-    att.gyro_z = gz;
-    att.quat1 = q[0];
-    att.quat2 = q[1];
-    att.quat3 = q[2];
-    att.quat4 = q[3];
-    att.temp = temp;
+    
     if (beacon_output)
         check_beacon_dist();
     

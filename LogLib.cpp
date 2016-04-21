@@ -270,7 +270,7 @@ void printJSON(){
     Serial.print(" ");
     for (int i = 0; i < 7; i++){
         if (CAN[i].en)
-            Serial.print(CAN[i].id);
+            Serial.print(CAN[i].id,HEX);
         Serial.print(" ");
     };
     Serial.println();
@@ -293,7 +293,7 @@ void printJSON(){
             Serial.print(FLS[i].minSpeed, 7);
             Serial.print(" ");
             Serial.print(FLS[i].maxSpeed, 7);
-        Serial.print(" ");
+        Serial.println(" ");
     };
     Serial.println();
 }
@@ -448,6 +448,27 @@ void LogTPV(){
 
 void LogATT(){
     attstring.begin();
+    att.heading = heading;
+    att.pitch = pitch;
+    att.yaw = yaw;
+    att.roll = roll;
+    att.dip = inclination;
+    att.mag_len = sqrt(sq(mx)+sq(my)+sq(mz));
+    att.mag_x = mx;
+    att.mag_y = my;
+    att.mag_z = mz;
+    att.acc_len = sqrt(sq(ax)+sq(ay)+sq(az));
+    att.acc_x = ax;
+    att.acc_y = ay;
+    att.acc_z = az;
+    att.gyro_x = gx;
+    att.gyro_y = gy;
+    att.gyro_z = gz;
+    att.quat1 = q[0];
+    att.quat2 = q[1];
+    att.quat3 = q[2];
+    att.quat4 = q[3];
+    att.temp = temp;
     Serial.println("Print ATT object"); 
     if (!dataFile) 
          dataFile = SD.open(namefile, FILE_WRITE);
@@ -501,11 +522,39 @@ void LogATT(){
     if(ATT[22])
         dataFloatATT(att.temp, 0);
     dataFile.print(attstring);
-    dataFile.println();     
-    filesize = dataFile.size();    
+    dataFile.println();          
+    dataFile.flush();
     dataFile.close();
+    filesize = dataFile.size();
     Serial.println("Datafile Saved");
     Serial.println(filesize);
+}
+
+void LogATT_nosd()
+{
+    attstring.begin();
+    att.heading = heading;
+    att.pitch = pitch;
+    att.yaw = yaw;
+    att.roll = roll;
+    att.dip = inclination;
+    att.mag_len = sqrt(sq(mx)+sq(my)+sq(mz));
+    att.mag_x = mx;
+    att.mag_y = my;
+    att.mag_z = mz;
+    att.acc_len = sqrt(sq(ax)+sq(ay)+sq(az));
+    att.acc_x = ax;
+    att.acc_y = ay;
+    att.acc_z = az;
+    att.gyro_x = gx;
+    att.gyro_y = gy;
+    att.gyro_z = gz;
+    att.quat1 = q[0];
+    att.quat2 = q[1];
+    att.quat3 = q[2];
+    att.quat4 = q[3];
+    att.temp = temp;
+    
 }
 
 boolean TIMECONV_GetJulianDateFromGPSTime(
