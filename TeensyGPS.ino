@@ -1,3 +1,4 @@
+
 #include "MatrixMath.h"
 //#include <SoftwareSerial.h>    //in case arduino board
 #include "BMsg838.h"
@@ -42,6 +43,7 @@ const String fixmodmask[]={"no fix", "2D", "3D", "3D+DGNSS"};
   };
 
 
+
 FlexCAN CANbus(1000000);
 static CAN_message_t can_pos,can_nav,can_pos_fil,can_nav_fil, can_dof1, can_dof2, can_lap;
 
@@ -59,7 +61,7 @@ KalmanFilterVA filterVA;
 
 union conv lat, lon, lat_fil, lon_fil;
 union conv_short alt, alt_fil, dof_roll, dof_pitch, acc_x, acc_y, acc_z, q1, q2, q3, q4;
-union conv_short_u dof_yaw, pressure, vel, vel_fil, course, lap_dist, lap_time;
+union conv_short_u dof_yaw, pressure, vel, vel_fil, course, lap_dist, stint_time;
 
 int led = 13;
 
@@ -71,7 +73,7 @@ uint8_t sats,fix;
 
 boolean log_en;
 int newlog, rate, can_speed, max_filesize, filesize, log_type, trig, intv;
-float blat, blong, btime, btol, course_angle, trigv, min_val, max_val;
+float blat, blong, btime, btol, course_angle, trigv, min_val, max_val, stint_duration;
 String UTC_Time;
 
 struct DOF_DATA att;
@@ -96,7 +98,8 @@ typedef struct
 }  line;
 
 line beacons[3];
-int pin_beacon[3] = {26, 27, 28}; //26 27 28 for Bt board 33 32 31 for new board
+int pin_beacon[3] = {26, 27, 28}; //26 27 28 for New board 33 32 31 for Bt board
+
 //////////////////////////////////////
 
 const int bearing_buffer=10;
@@ -266,6 +269,9 @@ void loop()
     temp=dt;
     temp=temp/1000.0;
     lap_distance=lap_distance+temp*gps.venus838data_raw.velocity;  //Lap distance in meters    
+    temp=temp/60;
+    stint_duration = stint_duration + temp;  //stint duration in minutes
+   
     sensor_9dof_read();   
     att.heading = heading;
     att.pitch = pitch;
@@ -296,8 +302,12 @@ void loop()
     att.temp = temp;
     if (beacon_output)
         check_beacon_dist();
+    
     if (can_speed)
+    {
+        //if (!log_output) LogATT_nosd();
         can_send(); 
+    }    
     if (log_output){
         if((newlog==0)&&(filesize > (max_filesize*1048576))){ //file size more than max 
             Serial.println("File's size exceeds max size"); 
@@ -362,26 +372,39 @@ void check_beacon_dist(){
    float distance;
    boolean crossing_true;
    // pt curr_gps, prev_gps; //moved to global
+   //curr_gps.lat = gps.venus838data_filter.Latitude;
+   //curr_gps.lon = gps.venus838data_filter.Longitude;
    for (int i = 0; i < (sizeof(beacons))/(sizeof(beacons[0])); i++){
      if (FLS[i].en)
       {
        crossing_true = get_line_intersection (beacons[i].p0_lat, beacons[i].p0_lon, beacons[i].p1_lat, beacons[i].p1_lon, prev_gps.lat, prev_gps.lon, gps.venus838data_raw.Latitude, gps.venus838data_raw.Longitude);
        if (crossing_true && (beacon_timeout.check()==true)&&(gps.venus838data_raw.velocity>0))
         {
-          if ((gps.venus838data_raw.velocity>beacons[i].min_spd )&&(gps.venus838data_raw.velocity<beacons[i].min_spd))
+          if ((gps.venus838data_raw.velocity>beacons[i].min_spd )&&(gps.venus838data_raw.velocity<beacons[i].max_spd))
           {
          if (i==0)
            Serial.println("Finish line crossing");
          if (i==1)
-           Serial.println("Pit entry line crossing");
+         {
+               //Serial.println("Pit entry line crossing");
+               stint_time.f = 0;
+               stint_duration = 0;
+           }
+           //Serial.println("Pit entry line crossing");
          if (i==2)
-           Serial.println("Pit exit line crossing");
+            {
+               //Serial.println("Pit exit line crossing");
+               stint_time.f = 0;
+               stint_duration = 0;
+           }
+           
          if (file_time_cut.check()==true)
                Serial.println("Time Cut Trigger"); 
+               
          //Triggers digital outputs according to setup
          digitalWrite(pin_beacon[i],beacons[i].output_level); 
          lap_dist.f = 0;
-         lap_time.f = 0;
+         laptime= 0;
          can_lap.buf[0] = i+1;               
          if (sd_datalog && log_output) {
              // if (file_time_cut.check()==true) dataFile.println("Time Trigger");
@@ -411,6 +434,8 @@ void check_beacon_dist(){
        digitalWrite(pin_beacon[2],!beacons[2].output_level);
        can_lap.buf[0]=0;
        }
+   //prev_gps.lat = curr_gps.lat;
+   //prev_gps.lon = curr_gps.lon;
 }
 
 boolean check_intervals(){
@@ -447,6 +472,28 @@ boolean check_constr(float value, float min, float max){
   if ((min < value)&&(value < max))
     return true;
   return false;
+}
+
+
+float det(float a, float b, float c, float d){
+  return a*d - b*c;
+}
+
+boolean between(double a, double b, double c){
+  return min(a,b) <= c + EPS && c <= max(a,b) + EPS;
+}
+
+void swap(double &a, double &b){
+  double temp;
+  temp = a;
+  a = b;
+  b = temp;
+}
+
+boolean intersect_line(double a, double b, double c, double d){
+   if (a > b) swap(a, b);
+   if (c > d) swap(c, d);
+   return max(a,c) <= min(b,d);
 }
 
 boolean get_line_intersection(float p0_x, float p0_y, float p1_x, float p1_y,float p2_x, float p2_y, float p3_x, float p3_y)
@@ -514,6 +561,7 @@ void can_send(){
   acc_x.f = (int16_t)(att.acc_x*100);
   acc_y.f = (int16_t)(att.acc_y*100);
   acc_z.f = (int16_t)(att.acc_z*100);
+  stint_time.f=stint_duration*100; //Stint duration in 1/100 of minutes, max 655 minutes of stint duration.
   q1.f = (int16_t)(att.quat1*100);
   q2.f = (int16_t)(att.quat2*100);
   q3.f = (int16_t)(att.quat3*100);
@@ -528,7 +576,7 @@ void can_send(){
   can_pos.buf[5]=lon.b[2];
   can_pos.buf[6]=lon.b[1];
   can_pos.buf[7]=lon.b[0];
-  //2 frame - filter data
+  //3 frame - filter data
   can_pos_fil.buf[0]=lat_fil.b[3];
   can_pos_fil.buf[1]=lat_fil.b[2];
   can_pos_fil.buf[2]=lat_fil.b[1];
@@ -537,7 +585,7 @@ void can_send(){
   can_pos_fil.buf[5]=lon_fil.b[2];
   can_pos_fil.buf[6]=lon_fil.b[1];
   can_pos_fil.buf[7]=lon_fil.b[0];
-  //3 frame
+  //2 frame
   can_nav.buf[0]=alt.b[1];
   can_nav.buf[1]=alt.b[0];
   can_nav.buf[2]=vel.b[1];
@@ -551,11 +599,12 @@ void can_send(){
   can_nav_fil.buf[1]=alt_fil.b[0];
   can_nav_fil.buf[2]=vel_fil.b[1];
   can_nav_fil.buf[3]=vel_fil.b[0];
-  can_nav_fil.buf[4]=course.b[1];
-  can_nav_fil.buf[5]=course.b[0];
+  can_nav_fil.buf[4]=stint_time.b[1]; //changed to stint time
+  can_nav_fil.buf[5]=stint_time.b[0];
   can_nav_fil.buf[6]=lap_dist.b[1];
   can_nav_fil.buf[7]=lap_dist.b[0];  
   //5 frame
+  
   can_dof1.buf[0]=dof_roll.b[1];
   can_dof1.buf[1]=dof_roll.b[0];
   can_dof1.buf[2]=dof_pitch.b[1];
