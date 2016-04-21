@@ -35,7 +35,11 @@ const String fixmodmask[]={"no fix", "2D", "3D", "3D+DGNSS"};
     uint8_t b[2];
   };
   
-
+   union conv_short_u
+  {
+    uint16_t f;
+    uint8_t b[2];
+  };
 
 
 FlexCAN CANbus(1000000);
@@ -54,14 +58,15 @@ KalmanFilter filter;
 KalmanFilterVA filterVA;
 
 union conv lat, lon, lat_fil, lon_fil;
-union conv_short alt, vel, alt_fil, vel_fil, course, dof_roll, dof_pitch, dof_yaw, pressure, acc_x, acc_y, acc_z, q1, q2, q3, q4;
+union conv_short alt, alt_fil, dof_roll, dof_pitch, acc_x, acc_y, acc_z, q1, q2, q3, q4;
+union conv_short_u dof_yaw, pressure, vel, vel_fil, course, lap_dist, lap_time;
 
 int led = 13;
 
 boolean led_on=1;
 boolean file_cutted=false;
 
-double t0,t1,dt=0;
+uint32_t t0,t1,dt,laptime=0;
 uint8_t sats,fix;
 
 boolean log_en;
@@ -73,7 +78,7 @@ struct DOF_DATA att;
 struct CAN_DATA CAN[7];
 struct FLS_DATA FLS[3];
 float ax, ay, az, gx, gy, gz, mx, my, mz; // variables to hold latest sensor data values 
-float heading, roll, pitch, yaw, temp, inclination; 
+float heading, roll, pitch, yaw, temp, inclination, lap_distance, temp_x, temp_y, temp_z; 
 float q[4] = {1.0f, 0.0f, 0.0f, 0.0f};    // vector to hold quaternion
 pt prev_gps;  //curr_gps removed, structs of points defined in loglib.h
 /////////////////////////////////////
@@ -92,7 +97,6 @@ typedef struct
 
 line beacons[3];
 int pin_beacon[3] = {26, 27, 28}; //26 27 28 for Bt board 33 32 31 for new board
-union conv_short lap_dist, lap_time;
 //////////////////////////////////////
 
 const int bearing_buffer=10;
@@ -252,7 +256,44 @@ void loop()
     prev_gps.lat=Lat_buffer.dequeue();
     prev_gps.lon=Long_buffer.dequeue();              
     course.f = gps.course_to(gps.venus838data_raw.Latitude, gps.venus838data_raw.Longitude, prev_gps.lat, prev_gps.lon);   
+    //Calculate lap distance
+    
+    t1=millis();    
+    dt=t1-t0;
+    t0=t1;                
+    laptime = laptime + dt;  //laptime in milliseconds
+    
+    temp=dt;
+    temp=temp/1000.0;
+    lap_distance=lap_distance+temp*gps.venus838data_raw.velocity;  //Lap distance in meters    
     sensor_9dof_read();   
+    att.heading = heading;
+    att.pitch = pitch;
+    att.yaw = yaw;
+    att.roll = roll;
+    att.dip = inclination;
+    att.mag_x = mx;
+    att.mag_y = my;
+    att.mag_z = mz;
+    temp_x = mx;
+    temp_y = my;
+    temp_z = mz;
+//    att.mag_len = (pow(temp_x, 2) + pow(temp_y, 2) + pow(temp_z, 2));
+    att.acc_x = ax;
+    att.acc_y = ay;
+    att.acc_z = az;
+    temp_x = ax;
+    temp_y = ay;
+    temp_z = az;
+//    att.acc_len = (pow(temp_x, 2) + pow(temp_y, 2) + pow(temp_z, 2));
+    att.gyro_x = gx;
+    att.gyro_y = gy;
+    att.gyro_z = gz;
+    att.quat1 = q[0];
+    att.quat2 = q[1];
+    att.quat3 = q[2];
+    att.quat4 = q[3];
+    att.temp = temp;
     if (beacon_output)
         check_beacon_dist();
     if (can_speed)
@@ -459,24 +500,24 @@ void can_send(){
   lon_fil.f=(int32_t)(gps.venus838data_filter.Longitude*1E7);
   alt.f=(int16_t)(gps.venus838data_raw.SealevelAltitude*10);
   alt_fil.f=(int16_t)(gps.venus838data_filter.SealevelAltitude*10);
-  vel.f=(int16_t)(gps.venus838data_raw.velocity*10*3.6);
-  vel_fil.f=(int16_t)(gps.venus838data_filter.velocity*10*3.6);
-  course.f=(int16_t)(course_angle*100);
+  vel.f=(uint16_t)(gps.venus838data_raw.velocity*100*3.6);
+  vel_fil.f=(uint16_t)(gps.venus838data_filter.velocity*100*3.6);
+  course.f=(uint16_t)(course_angle*100);
   sats=gps.venus838data_raw.NumSV;
   fix=gps.venus838data_raw.fixmode;
   fix=fix<<4;
-  lap_dist.f = (int16_t)(0*4);          //to do
-  dof_roll.f = (int16_t)att.roll;
-  dof_pitch.f = (int16_t)att.pitch;
-  dof_yaw.f = (int16_t)(att.yaw*10);
-  pressure.f = (int16_t)0;          //to do
+  lap_dist.f = (uint16_t)(lap_distance*2.5);     
+  dof_roll.f = (int16_t)(att.roll*100);
+  dof_pitch.f = (int16_t)(att.pitch*100);
+  dof_yaw.f = (uint16_t)(att.yaw*100);
+  pressure.f = (uint16_t)0;               //to do
   acc_x.f = (int16_t)(att.acc_x*100);
   acc_y.f = (int16_t)(att.acc_y*100);
   acc_z.f = (int16_t)(att.acc_z*100);
-  q1.f = (int16_t)(att.quat1);
-  q2.f = (int16_t)(att.quat2);
-  q3.f = (int16_t)(att.quat3);
-  q4.f = (int16_t)(att.quat4);
+  q1.f = (int16_t)(att.quat1*100);
+  q2.f = (int16_t)(att.quat2*100);
+  q3.f = (int16_t)(att.quat3*100);
+  q4.f = (int16_t)(att.quat4*100);
   //raw data
   //1 frame
   can_pos.buf[0]=lat.b[3];
@@ -556,5 +597,6 @@ void can_send(){
   if (CAN[6].en)   
       CANbus.write(can_dof2);  
 }
+
 
 

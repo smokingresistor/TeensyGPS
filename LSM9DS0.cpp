@@ -217,8 +217,8 @@ void sensor_9dof_read()
   dof.readTemp();
   temp = 21.0 + (float) dof.temperature/8.0;
   //Normalize accelerometer raw values.
-  float accXnorm = ax/sqrt(sq(ax) + sq(ay) + sq(az));
-  float accYnorm = ay/sqrt(sq(ax) + sq(ay) + sq(az));
+  float accXnorm = ax/sqrt(pow(ax,2) + pow(ay,2) + pow(az,2));
+  float accYnorm = ay/sqrt(pow(ax,2) + pow(ay,2) + pow(az,2));
   //Calculate pitch and roll
   pitch = asin(-accXnorm);
   roll = asin(accYnorm/cos(pitch));
@@ -227,7 +227,15 @@ void sensor_9dof_read()
   float magZcomp = mx*cos(roll)*sin(pitch)+my*sin(roll)-mz*cos(roll)*cos(pitch);
   // float magA = sqrt(sq(magXcomp)+sq(magYcomp)+sq(magZcomp));
   roll = 180*roll/M_PI;
+  if ((az < 0)&&(roll > 0))
+     roll = 180 - roll; // roll change from 0 to 180 degree
+  if ((az < 0)&&(roll < 0))
+     roll = - 180 - roll; // roll change from 0 to -180 degree
   pitch = 180*pitch/M_PI;
+  if ((az < 0)&&(pitch > 0))
+     pitch = 180 - pitch; // pitch change from 0 to 180 degree
+  if ((az < 0)&&(pitch < 0))
+     pitch = - 180 - pitch; // pitch change from 0 to -180 degree
   heading = 180*(atan2f(magYcomp,magXcomp)/M_PI + 1);
   yaw = heading;
   declination = get_declination (gps.venus838data_filter.Latitude, gps.venus838data_raw.Longitude);
