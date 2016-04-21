@@ -251,9 +251,9 @@ void loop()
                 Serial.println(";");
                 */
     
-    Serial.print("UTC time: ");
+    //Serial.print("UTC time: ");
     UTC_Time = GetUTCTime(gps.venus838data_raw.gps_week, gps.venus838data_raw.timeofweek);
-    Serial.println(UTC_Time);
+    //Serial.println(UTC_Time);
     Lat_buffer.enqueue(gps.venus838data_raw.Latitude);
     Long_buffer.enqueue(gps.venus838data_raw.Longitude);     
     prev_gps.lat=Lat_buffer.dequeue();
@@ -305,8 +305,8 @@ void loop()
     
     if (can_speed)
     {
-        //if (!log_output) LogATT_nosd();
-        can_send(); 
+        if (!log_output) LogATT_nosd();
+        can_send();
     }    
     if (log_output){
         if((newlog==0)&&(filesize > (max_filesize*1048576))){ //file size more than max 
@@ -403,8 +403,8 @@ void check_beacon_dist(){
                
          //Triggers digital outputs according to setup
          digitalWrite(pin_beacon[i],beacons[i].output_level); 
-         lap_dist.f = 0;
-         laptime= 0;
+         lap_dist.f = 0;        
+         laptime=0;
          can_lap.buf[0] = i+1;               
          if (sd_datalog && log_output) {
              // if (file_time_cut.check()==true) dataFile.println("Time Trigger");
@@ -562,10 +562,13 @@ void can_send(){
   acc_y.f = (int16_t)(att.acc_y*100);
   acc_z.f = (int16_t)(att.acc_z*100);
   stint_time.f=stint_duration*100; //Stint duration in 1/100 of minutes, max 655 minutes of stint duration.
-  q1.f = (int16_t)(att.quat1*100);
-  q2.f = (int16_t)(att.quat2*100);
-  q3.f = (int16_t)(att.quat3*100);
-  q4.f = (int16_t)(att.quat4*100);
+  /*
+  q1.f = q[0]*100;//att.quat1;
+  q2.f = q[1]*100;//att.quat2;
+  q3.f = q[2]*100;//att.quat3;
+  q4.f = q[3]*100;//att.quat4;
+ */
+  
   //raw data
   //1 frame
   can_pos.buf[0]=lat.b[3];
@@ -622,6 +625,10 @@ void can_send(){
   can_lap.buf[6]=acc_z.b[1];
   can_lap.buf[7]=acc_z.b[0];  
   //7 frame
+  q1.f=q[0]*10000;
+  q2.f=q[1]*10000;
+  q3.f=q[2]*10000;
+  q4.f=q[3]*10000;
   can_dof2.buf[0]=q1.b[1];
   can_dof2.buf[1]=q1.b[0];
   can_dof2.buf[2]=q2.b[1];

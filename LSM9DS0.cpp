@@ -28,8 +28,8 @@ int DRDYG  = 12; // DRDYG  tells us when gyro data is ready
 // In any case, this is the free parameter in the Madgwick filtering and fusion scheme.
 #define beta sqrt(3.0f / 4.0f) * GyroMeasError   // compute beta
 #define zeta sqrt(3.0f / 4.0f) * GyroMeasDrift   // compute zeta, the other free parameter in the Madgwick scheme usually set to a small or zero value
-#define Kp 2.0f * 5.0f // these are the free parameters in the Mahony filter and fusion scheme, Kp for proportional feedback, Ki for integral
-#define Ki 0.0f
+#define Kp 0.005f * 1.0f // these are the free parameters in the Mahony filter and fusion scheme, Kp for proportional feedback, Ki for integral
+#define Ki 0.00005f
 float eInt[3] = {0.0f, 0.0f, 0.0f};
 
 
@@ -296,14 +296,14 @@ void sensor_9dof_configure()
   pinMode(INT2XM, INPUT);
   pinMode(DRDYG,  INPUT);
   dof.begin();
-  dof.setAccelScale(dof.A_SCALE_4G);
+  dof.setAccelScale(dof.A_SCALE_16G);
   dof.setGyroScale(dof.G_SCALE_245DPS);
   dof.setMagScale(dof.M_SCALE_2GS);
   // Set output data rates                   
   dof.setAccelODR(dof.A_ODR_100); // Set accelerometer update rate at 100 Hz
   dof.setAccelABW(dof.A_ABW_50); // Choose lowest filter setting for low noise                            380 Hz (bandwidth 20, 25, 50, 100 Hz), or 760 Hz (bandwidth 30, 35, 50, 100 Hz)
   dof.setGyroODR(dof.G_ODR_95_BW_125);  // Set gyro update rate to 190 Hz with the smallest bandwidth for low noise
-  dof.setMagODR(dof.M_ODR_125); // Set magnetometer to update every 80 ms
+  dof.setMagODR(dof.M_ODR_25); // Set magnetometer to update every 80 ms
   dof.calLSM9DS0(gbias, abias);
 }
 
@@ -367,6 +367,7 @@ void sensor_9dof_read()
 
 void print_9dof_data()
 {
+  /*
   // print out accelleration data
   Serial.print("Accel X: "); Serial.print(ax); Serial.print(" ");
   Serial.print("  \tY: "); Serial.print(ay);   Serial.print(" ");
@@ -384,7 +385,7 @@ void print_9dof_data()
 
   // print out temperature data
   Serial.print("Temp: "); Serial.print(temp); Serial.println(" *C");
-  /* 'orientation' should have valid .roll and .pitch fields */
+  /* 'orientation' should have valid .roll and .pitch fields 
   Serial.println(F("Orientation: "));
   Serial.print("Roll: ");
   Serial.println(roll, 7);
@@ -398,6 +399,16 @@ void print_9dof_data()
   Serial.println(inclination, 7);
   Serial.print(F(" "));
   Serial.println("**********************\n");
+  */
+  Serial.print(q[0], 7);  
+  Serial.print(","); 
+  Serial.print(q[1], 7);
+  Serial.print(",");
+  Serial.print(q[2], 7);
+  Serial.print(",");
+  Serial.print(q[3], 7);
+  Serial.println(",");
+  
 }
 
 

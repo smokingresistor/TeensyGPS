@@ -37,9 +37,9 @@ int64_t* KalmanFilter::KalmanProcessing(int64_t lat, int64_t lon){
          GPS_data[0][2] = (uint64_t) time;
          
           //if (i != 100){ //Initialize cosLat      
-          Serial.print("\r\n ==================FirstLat: "); Serial.print((float)firstGPS_data[0][0]); Serial.print(" FirstLon: "); Serial.println((float)firstGPS_data[0][1]);        
+          //Serial.print("\r\n ==================FirstLat: "); Serial.print((float)firstGPS_data[0][0]); Serial.print(" FirstLon: "); Serial.println((float)firstGPS_data[0][1]);        
           if (((firstGPS_data[0][0] == GPS_data[0][0])&&(firstGPS_data[0][1] == GPS_data[0][1]))||((firstGPS_data[0][0] == 0)&&(firstGPS_data[0][1] == 0))){
-            Serial.println("\r\n INIT FIRST!!! ===========================================");
+            //Serial.println("\r\n INIT FIRST!!! ===========================================");
             firstGPS_data[0][0] = GPS_data[0][0];
             firstGPS_data[0][1] = GPS_data[0][1];
             firstGPS_data[0][2] = GPS_data[0][2]; 
@@ -119,16 +119,16 @@ int64_t* KalmanFilter::KalmanProcessing(int64_t lat, int64_t lon){
           Matrix.Add((float*) IntermediateProductMatrix3, (float*) RcovarianceMatrix, 2, 2, (float*) IntermediateSumMatrix2);
           int flag = Matrix.Invert((float*) IntermediateSumMatrix2, 2); //The argument matrix gets inverted; no need to create temp matrix.
           if (flag == 0){
-            Serial.println("CANT INVERT");
+            //Serial.println("CANT INVERT");
           }
           Matrix.Multiply((float*) PerrorCovarianceEstimate, (float*) HmatrixTranspose, 4,4,2, (float*) IntermediateQuotientMatrix);
           Matrix.Multiply((float*) IntermediateQuotientMatrix, (float*) IntermediateSumMatrix2, 4,2,2, (float*) KalmanGain);
           data[0] = (float) (GPS_data[0][0]);///10000000.0;//-firstGPS_data[0][0]/10000000.0);//10000000.0;//*pi/180*Rearth/10000000.0;
           data[1] = (float) (GPS_data[0][1]);///10000000.0;//-firstGPS_data[0][1]/10000000.0);///10000000.0;//*pi/180*Rearth*cosLat/10000000.0; 
-          Serial.print("\r\n i: "); Serial.print(i); 
-          Serial.print("\r\n FirstLat: "); Serial.print((float)firstGPS_data[0][0]); Serial.print(" FirstLon: "); Serial.println((float)firstGPS_data[0][1]);  
-          Serial.print("\r\n LstLat: "); Serial.print((float)GPS_data[0][0]); Serial.print(" LastLon: "); Serial.println((float)GPS_data[0][1]); 
-          Serial.print("\r\n Lat: "); Serial.print(data[0]); Serial.print(" Lon: "); Serial.println(data[1]);
+          //Serial.print("\r\n i: "); Serial.print(i); 
+          //Serial.print("\r\n FirstLat: "); Serial.print((float)firstGPS_data[0][0]); Serial.print(" FirstLon: "); Serial.println((float)firstGPS_data[0][1]);  
+          //Serial.print("\r\n LstLat: "); Serial.print((float)GPS_data[0][0]); Serial.print(" LastLon: "); Serial.println((float)GPS_data[0][1]); 
+          //Serial.print("\r\n Lat: "); Serial.print(data[0]); Serial.print(" Lon: "); Serial.println(data[1]);
           float ZkTranspose[2][1] = { //We only need the transposed version of this, so we do it right here.
                 {data[0]},
                 {data[1]},

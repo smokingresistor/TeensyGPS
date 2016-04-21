@@ -52,6 +52,8 @@ extern void incFileNum();
 extern void create_newlog();
 extern void LogTPV();
 extern void LogATT();
+extern void LogATT_nosd();
+
 extern String GetUTCTime (unsigned int gps_week, unsigned long gps_tow);
 
 String null_add(int value);
