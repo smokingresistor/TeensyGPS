@@ -217,6 +217,9 @@ void loop()
       char messagetype[64];
       memset(messagetype,0,64);
       if(Serial2.available()){
+//           Serial.println("Start loop");
+//           Serial.println(millis());
+           sensor_9dof_read();
            ret=waitingRespondandReceive(gps.RecVBinarybuf,0xA8,2000); 
            if(ret>7){        
                 if(!GPSNavigationMsgProcessing(&(gps.venus838data_raw),&(gps.venus838data_filter),gps,&filter, &filterVA))
@@ -272,8 +275,6 @@ void loop()
     lap_distance=lap_distance+temp*gps.venus838data_raw.velocity;  //Lap distance in meters   
     temp=temp/60;
     stint_duration = stint_duration + temp;  //stint duration in minutes
-   
-    sensor_9dof_read();   
     
     if (beacon_output)
         check_beacon_dist();
@@ -305,10 +306,12 @@ void loop()
                digitalWrite(led,led_on);
                led_blink.reset();
               }
-            Serial.println(millis());
+//            Serial.print("Time start log: ");
+//            Serial.println(millis());
             LogTPV(); // log TPV object
-            LogATT(); // log ATT object  
-            Serial.println(millis());
+            LogATT(); // log ATT object 
+//            Serial.print("Time stop log: "); 
+//            Serial.println(millis());
         }//if      
 //                Serial.println("filtered data:\n");                
 //                printpositionfloatformat(gps.venus838data_filter.Latitude, 10000000, "  Latitude= ", "degree");

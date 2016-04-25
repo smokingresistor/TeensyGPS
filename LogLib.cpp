@@ -108,6 +108,8 @@ PString tpvstring(buffer, sizeof(buffer));
 char buffer2[1000];
 PString attstring(buffer2, sizeof(buffer2));
 
+static int num_cycle = 0;
+
 String SetNulls(){
   String n; 
   int numNulls = 0;
@@ -395,7 +397,7 @@ void LogTPV(){
      tpvstring.begin();
      Serial.println("Print TPV object"); 
      if (!dataFile) 
-          dataFile = SD.open(namefile, FILE_WRITE);
+          dataFile = SD.open(namefile, O_WRITE);
       tpvstring.print("TPV,");
       if(TPV[0])
           tpvstring.print("Venus838,");    
@@ -471,7 +473,7 @@ void LogATT(){
     att.temp = temp;
     Serial.println("Print ATT object"); 
     if (!dataFile) 
-         dataFile = SD.open(namefile, FILE_WRITE);
+         dataFile = SD.open(namefile, O_WRITE);
     attstring.print("ATT,");
     if(ATT[0])
         attstring.print("LSM9DS0TR,");
@@ -521,13 +523,15 @@ void LogATT(){
         dataFloatATT(att.quat4, 0);
     if(ATT[22])
         dataFloatATT(att.temp, 0);
+    num_cycle =  num_cycle + 1;
     dataFile.print(attstring);
-    dataFile.println();          
-    dataFile.flush();
-    dataFile.close();
-    filesize = dataFile.size();
-    Serial.println("Datafile Saved");
-    Serial.println(filesize);
+    dataFile.println();
+    if (num_cycle % 2 == 0){
+        filesize = dataFile.size();
+        dataFile.close();
+        Serial.println("Datafile Saved");
+        Serial.println(filesize);
+    }
 }
 
 void LogATT_nosd()

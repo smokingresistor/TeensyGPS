@@ -66,7 +66,7 @@ const byte BinaryMsgHeader[]={0xA0,0xA1};
             memset(buf,0,128);
             
         while(!Serial2.available()){
-            delay(10);
+            delay(1);
         }
         
         c=Serial2.read();
