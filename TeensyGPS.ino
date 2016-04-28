@@ -261,7 +261,7 @@ void loop()
     Long_buffer.enqueue(gps.venus838data_raw.Longitude);     
     prev_gps.lat=Lat_buffer.dequeue();
     prev_gps.lon=Long_buffer.dequeue();              
-    course.f = gps.course_to(gps.venus838data_raw.Latitude, gps.venus838data_raw.Longitude, prev_gps.lat, prev_gps.lon);   
+    course_angle = gps.course_to(gps.venus838data_raw.Latitude, gps.venus838data_raw.Longitude, prev_gps.lat, prev_gps.lon);   
     //Calculate lap distance
     
     t1=millis();    
@@ -527,7 +527,8 @@ void can_send(){
   alt_fil.f=(int16_t)(gps.venus838data_filter.SealevelAltitude*10);
   vel.f=(uint16_t)(gps.venus838data_raw.velocity*100*3.6);
   vel_fil.f=(uint16_t)(gps.venus838data_filter.velocity*100*3.6);
-  course.f=(uint16_t)(course_angle*100);
+  course_angle = course_angle*100;
+  course.f=(uint16_t)(course_angle);
   sats=gps.venus838data_raw.NumSV;
   fix=gps.venus838data_raw.fixmode;
   fix=fix<<4;
