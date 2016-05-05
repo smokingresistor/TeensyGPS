@@ -18,6 +18,6 @@ extern float get_declination(float lat, float lon);
 extern void sensor_9dof_configure();
 extern void sensor_9dof_read();
 extern void print_9dof_data();
-
+void scale_accel_16g();
 
 #endif

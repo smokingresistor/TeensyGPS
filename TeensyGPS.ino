@@ -1,4 +1,3 @@
-
 #include "MatrixMath.h"
 //#include <SoftwareSerial.h>    //in case arduino board
 #include "BMsg838.h"
@@ -83,6 +82,8 @@ float ax, ay, az, gx, gy, gz, mx, my, mz; // variables to hold latest sensor dat
 float heading, roll, pitch, yaw, temp, inclination, lap_distance; 
 float q[4] = {1.0f, 0.0f, 0.0f, 0.0f};    // vector to hold quaternion
 pt prev_gps;  //curr_gps removed, structs of points defined in loglib.h
+float Timer_50Hz = 20; //20ms
+float prev_time;
 /////////////////////////////////////
 // trigger line virables
 boolean beacon_output=1;
@@ -213,13 +214,18 @@ void loop()
   dataFile = SD.open(namefile, FILE_WRITE);
   while (1)
   {
+      float now_time = millis();
+      if (now_time - prev_time > Timer_50Hz){
+          Serial.println(now_time, 4);
+          sensor_9dof_read();
+          prev_time = now_time;
+      }
       int ret=0;
       char messagetype[64];
       memset(messagetype,0,64);
       if(Serial2.available()){
 //           Serial.println("Start loop");
 //           Serial.println(millis());
-           sensor_9dof_read();
            ret=waitingRespondandReceive(gps.RecVBinarybuf,0xA8,2000); 
            if(ret>7){        
                 if(!GPSNavigationMsgProcessing(&(gps.venus838data_raw),&(gps.venus838data_filter),gps,&filter, &filterVA))
@@ -261,7 +267,7 @@ void loop()
     Long_buffer.enqueue(gps.venus838data_raw.Longitude);     
     prev_gps.lat=Lat_buffer.dequeue();
     prev_gps.lon=Long_buffer.dequeue();              
-    course.f = gps.course_to(gps.venus838data_raw.Latitude, gps.venus838data_raw.Longitude, prev_gps.lat, prev_gps.lon);   
+    course_angle = gps.course_to(gps.venus838data_raw.Latitude, gps.venus838data_raw.Longitude, prev_gps.lat, prev_gps.lon);   
     //Calculate lap distance
     
     t1=millis();    
@@ -527,7 +533,8 @@ void can_send(){
   alt_fil.f=(int16_t)(gps.venus838data_filter.SealevelAltitude*10);
   vel.f=(uint16_t)(gps.venus838data_raw.velocity*100*3.6);
   vel_fil.f=(uint16_t)(gps.venus838data_filter.velocity*100*3.6);
-  course.f=(uint16_t)(course_angle*100);
+  course_angle = course_angle*100;
+  course.f=(uint16_t)(course_angle);
   sats=gps.venus838data_raw.NumSV;
   fix=gps.venus838data_raw.fixmode;
   fix=fix<<4;
