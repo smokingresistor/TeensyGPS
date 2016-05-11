@@ -337,14 +337,15 @@ void LogSetup() {
       sd_datalog=true;
       card.init(SPI_FULL_SPEED, chipSelect);
    }
+ parseJSON();
+ printJSON();
  if (sd_datalog==true) {
-    parseJSON();
-    printJSON();
     if (parse_success)
         log_output = CNF[0];
     if (log_output)
         create_newlog();
  }//if 
+ 
 }
 
 void create_newlog(){

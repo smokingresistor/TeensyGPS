@@ -216,7 +216,7 @@ void loop()
   {
       float now_time = millis();
       if (now_time - prev_time > Timer_50Hz){
-          Serial.println(now_time, 4);
+//          Serial.println(now_time);
           sensor_9dof_read();
           prev_time = now_time;
       }
@@ -520,11 +520,11 @@ boolean get_line_intersection(float p0_x, float p0_y, float p1_x, float p1_y,flo
 }
 
 void can_send(){
-              if (led_blink.check())
-              {
-                 led_on=!led_on;
-                 digitalWrite(led,led_on);
-              }
+  if (led_blink.check())
+  {
+     led_on=!led_on;
+     digitalWrite(led,led_on);
+  }
   lat.f=(int32_t)(gps.venus838data_raw.Latitude*1E7); 
   lat_fil.f=(int32_t)(gps.venus838data_filter.Latitude*1E7);
   lon.f=(int32_t)(gps.venus838data_raw.Longitude*1E7);
