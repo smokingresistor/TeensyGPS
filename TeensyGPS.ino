@@ -389,6 +389,7 @@ void check_beacon_dist(){
          digitalWrite(pin_beacon[i],beacons[i].output_level); 
          lap_dist.f = 0;        
          laptime=0;
+         lap_distance=0;
          can_lap.buf[0] = i+1;               
          if (sd_datalog && log_output) {
              // if (file_time_cut.check()==true) dataFile.println("Time Trigger");
