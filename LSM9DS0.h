@@ -5,12 +5,15 @@
 #include <Wire.h>
 #include "BMsg838.h"
 
+#define ACC_SCALE 1000
+#define YAW_SCALE 100
+
 extern BMsg838 gps;
 extern int INT1XM;
 extern int INT2XM;
 extern int DRDYG;
 extern float ax, ay, az, gx, gy, gz, mx, my, mz; 
-extern float heading, roll, pitch, yaw, temp, inclination; 
+extern float heading, roll, pitch, yaw, temp, inclination, yaw_rate; 
 extern float q[4];
 
 extern void MadgwickQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz);

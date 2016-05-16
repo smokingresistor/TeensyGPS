@@ -1,6 +1,5 @@
 #include "LogLib.h"
 
-
 //int chipSelect = 4; //Arduino Mega
 //int chipSelect = 6; //TeensyGPS version 1.0
 int chipSelect = 15; //TeensyGPS version 1.1
@@ -93,13 +92,15 @@ String ATT_name[24] = {"device",
                        "quat3",
                        "quat4",
                        "temp"};
-String CAN_name[7] =  {"can00",
+String CAN_name[NUM_CAN_FRAME] =  
+                      {"can00",
                        "can01",
                        "can02",
                        "can03",
                        "can04",
                        "can05",
-                       "can06"};
+                       "can06",
+                       "can07"};
 String FLS_name[3] =  {"finish",
                        "pit_entry",
                        "pit_exit"};
@@ -214,7 +215,7 @@ void parseJSON() {
           ATT[i] = config3 [ATT_name[i]];
       };
       classConfig[3] = config4["class"];
-      for (i = 0; i < 7; i++){
+      for (i = 0; i < NUM_CAN_FRAME; i++){
           CAN[i].en = config4 [CAN_name[i]][0];
           CAN[i].id = config4 [CAN_name[i]][1];
       };
@@ -270,7 +271,7 @@ void printJSON(){
     Serial.println();
     Serial.print("Canbus output enabled on frames:");
     Serial.print(" ");
-    for (int i = 0; i < 7; i++){
+    for (int i = 0; i < NUM_CAN_FRAME; i++){
         if (CAN[i].en)
             Serial.print(CAN[i].id,HEX);
         Serial.print(" ");
@@ -453,7 +454,7 @@ void LogATT(){
     attstring.begin();
     att.heading = heading;
     att.pitch = pitch;
-    att.yaw = yaw;
+    att.yaw = yaw_rate;
     att.roll = roll;
     att.dip = inclination;
     att.mag_len = sqrt(sq(mx)+sq(my)+sq(mz));
@@ -487,7 +488,7 @@ void LogATT(){
     if(ATT[3])
         dataFloatATT(att.pitch, 0);
     if(ATT[4])
-        dataFloatATT(att.yaw, 0);
+        dataFloatATT(att.yaw*YAW_SCALE, 0);
     if(ATT[5])
         dataFloatATT(att.roll, 0);
     if(ATT[6])
@@ -503,11 +504,11 @@ void LogATT(){
     if(ATT[11])
         dataFloatATT(att.acc_len, 0);
     if(ATT[12])
-        dataFloatATT(att.acc_x, 0);
+        dataFloatATT(att.acc_x*ACC_SCALE, 0);
     if(ATT[13])
-        dataFloatATT(att.acc_y, 0);
+        dataFloatATT(att.acc_y*ACC_SCALE, 0);
     if(ATT[14])
-        dataFloatATT(att.acc_z, 0);
+        dataFloatATT(att.acc_z*ACC_SCALE, 0);
     if(ATT[15])
         dataFloatATT(att.gyro_x, 0);
     if(ATT[16])

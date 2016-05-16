@@ -288,7 +288,7 @@ void sensor_9dof_configure()
   pinMode(INT2XM, INPUT);
   pinMode(DRDYG,  INPUT);
   dof.begin();
-  dof.setAccelScale(dof.A_SCALE_2G);
+  dof.setAccelScale(dof.A_SCALE_4G);
   dof.setGyroScale(dof.G_SCALE_245DPS);
   dof.setMagScale(dof.M_SCALE_2GS);
   // Set output data rates                   
@@ -308,6 +308,7 @@ void scale_accel_16g(){  //need to set abias
 void sensor_9dof_read()
 {
   float declination;
+  static float prev_yaw;
   float gx_q, gy_q, gz_q;
   if(digitalRead(DRDYG)){
     dof.readGyro();              // Read raw gyro data
@@ -346,6 +347,8 @@ void sensor_9dof_read()
   roll = atan2(2*(q[0]*q[1]+q[2]*q[3]),(1-2*(sq(q[1])+sq(q[2]))))*180.0/M_PI;
   pitch = asin(2*(q[0]*q[2]-q[3]*q[1]))*180.0/M_PI;
   yaw = atan2(2*(q[0]*q[3]+q[1]*q[2]), (1-2*(sq(q[2])+sq(q[3]))))*180.0/M_PI;
+  yaw_rate = (prev_yaw - yaw)/50.0;
+  prev_yaw = yaw;
   if ((az < 0)&&(pitch > 0))
      pitch = 180 - pitch; // pitch change from 0 to 180 degree
   if ((az < 0)&&(pitch < 0))
@@ -366,17 +369,17 @@ void print_9dof_data()
   Serial.print("Delta T: "); Serial.println(deltat, 4);
 
   // print out accelleration data
-  Serial.print("Accel X: "); Serial.print(ax); Serial.print(" ");
-  Serial.print("  \tY: "); Serial.print(ay);   Serial.print(" ");
-  Serial.print("  \tZ: "); Serial.print(az);   Serial.println("  \tm/s^2");
+  Serial.print("Accel X: "); Serial.print(ax*ACC_SCALE, 3); Serial.print(" ");
+  Serial.print("  \tY: "); Serial.print(ay*ACC_SCALE, 3);   Serial.print(" ");
+  Serial.print("  \tZ: "); Serial.print(az*ACC_SCALE, 3);   Serial.println("  \mg");
   // print out magnetometer data
-  Serial.print("Magn. X: "); Serial.print(mx); Serial.print(" ");
-  Serial.print("  \tY: "); Serial.print(my);   Serial.print(" ");
-  Serial.print("  \tZ: "); Serial.print(mz);   Serial.println("  \tgauss");
+  Serial.print("Magn. X: "); Serial.print(mx, 3); Serial.print(" ");
+  Serial.print("  \tY: "); Serial.print(my, 3);   Serial.print(" ");
+  Serial.print("  \tZ: "); Serial.print(mz, 3);   Serial.println("  \tgauss");
   // print out gyroscopic data
-  Serial.print("Gyro  X: "); Serial.print(gx); Serial.print(" ");
-  Serial.print("  \tY: "); Serial.print(gy);   Serial.print(" ");
-  Serial.print("  \tZ: "); Serial.print(gz);   Serial.println("  \tdps");
+  Serial.print("Gyro  X: "); Serial.print(gx, 3); Serial.print(" ");
+  Serial.print("  \tY: "); Serial.print(gy, 3);   Serial.print(" ");
+  Serial.print("  \tZ: "); Serial.print(gz, 3);   Serial.println("  \tdps");
 
   // print out temperature data
   Serial.print("Temp: "); Serial.print(temp); Serial.println(" *C");
@@ -387,8 +390,8 @@ void print_9dof_data()
   Serial.println(roll, 7);
   Serial.print("Pitch: ");
   Serial.println(pitch, 7);
-  Serial.print("Yaw: ");
-  Serial.println(yaw, 7);
+  Serial.print("Yaw rate: ");
+  Serial.println(yaw_rate*YAW_SCALE, 7);
   Serial.print("Heading: ");
   Serial.println(heading, 7);
   Serial.print("Inclination: ");

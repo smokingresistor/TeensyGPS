@@ -18,6 +18,8 @@
 #define SIMPLEFIFO_LARGE
 #include <SimpleFIFO.h>
 
+
+
 const String fixmodmask[]={"no fix", "2D", "3D", "3D+DGNSS"};
 /* This sample code demonstrates the normal use of the binary message of 
    SkyTraq Venus 8 GNSS Receiver.
@@ -44,7 +46,7 @@ const String fixmodmask[]={"no fix", "2D", "3D", "3D+DGNSS"};
 
 
 FlexCAN CANbus(1000000);
-static CAN_message_t can_pos,can_nav,can_pos_fil,can_nav_fil, can_dof1, can_dof2, can_lap;
+static CAN_message_t can_pos,can_nav,can_pos_fil,can_nav_fil, can_dof1, can_dof2, can_lap, can_yaw;
 
 
 /*gps interfacce relate class*/
@@ -59,8 +61,8 @@ KalmanFilter filter;
 KalmanFilterVA filterVA;
 
 union conv lat, lon, lat_fil, lon_fil;
-union conv_short alt, alt_fil, dof_roll, dof_pitch, acc_x, acc_y, acc_z, q1, q2, q3, q4;
-union conv_short_u dof_yaw, pressure, vel, vel_fil, course, lap_dist, stint_time;
+union conv_short alt, alt_fil, dof_roll, dof_pitch, acc_x, acc_y, acc_z, q1, q2, q3, q4, dof_yaw, yaw_roll, yaw_pitch;
+union conv_short_u pressure, vel, vel_fil, course, lap_dist, stint_time;
 
 int led = 13;
 
@@ -76,10 +78,11 @@ float blat, blong, btime, btol, course_angle, trigv, min_val, max_val, stint_dur
 String UTC_Time;
 
 struct DOF_DATA att;
-struct CAN_DATA CAN[7];
+struct CAN_DATA CAN[NUM_CAN_FRAME];
 struct FLS_DATA FLS[3];
 float ax, ay, az, gx, gy, gz, mx, my, mz; // variables to hold latest sensor data values 
 float heading, roll, pitch, yaw, temp, inclination, lap_distance; 
+float yaw_rate;
 float q[4] = {1.0f, 0.0f, 0.0f, 0.0f};    // vector to hold quaternion
 pt prev_gps;  //curr_gps removed, structs of points defined in loglib.h
 float Timer_50Hz = 20; //20ms
@@ -157,6 +160,8 @@ void setup()
        can_lap.len=8;
        can_dof2.id=CAN[6].id;
        can_dof2.len=8;
+       can_yaw.id=CAN[7].id;
+       can_yaw.len=6;
        CANbus.begin(); 
        digitalWrite(led,led_on); 
     }
@@ -389,7 +394,6 @@ void check_beacon_dist(){
          digitalWrite(pin_beacon[i],beacons[i].output_level); 
          lap_dist.f = 0;        
          laptime=0;
-         lap_distance=0;
          can_lap.buf[0] = i+1;               
          if (sd_datalog && log_output) {
              // if (file_time_cut.check()==true) dataFile.println("Time Trigger");
@@ -521,6 +525,7 @@ boolean get_line_intersection(float p0_x, float p0_y, float p1_x, float p1_y,flo
 }
 
 void can_send(){
+  static float prev_roll, prev_pitch;
   if (led_blink.check())
   {
      led_on=!led_on;
@@ -542,11 +547,11 @@ void can_send(){
   lap_dist.f = (uint16_t)(lap_distance*2.5);     
   dof_roll.f = (int16_t)(att.roll*100);
   dof_pitch.f = (int16_t)(att.pitch*100);
-  dof_yaw.f = (uint16_t)(att.yaw*100);
+  dof_yaw.f = (int16_t)att.yaw;
   pressure.f = (uint16_t)0;               //to do
-  acc_x.f = (int16_t)(att.acc_x*100);
-  acc_y.f = (int16_t)(att.acc_y*100);
-  acc_z.f = (int16_t)(att.acc_z*100);
+  acc_x.f = (int16_t)att.acc_x;
+  acc_y.f = (int16_t)att.acc_y;
+  acc_z.f = (int16_t)att.acc_z;
   stint_time.f=stint_duration*100; //Stint duration in 1/100 of minutes, max 655 minutes of stint duration.
   /*
   q1.f = q[0]*100;//att.quat1;
@@ -623,6 +628,18 @@ void can_send(){
   can_dof2.buf[5]=q3.b[0];
   can_dof2.buf[6]=q4.b[1];
   can_dof2.buf[7]=q4.b[0];  
+  //8 frame
+  dof_yaw.f   = (int16_t) att.yaw;
+  yaw_roll.f  = (int16_t)((prev_roll - att.roll)/rate*YAW_SCALE);
+  yaw_pitch.f = (int16_t)((prev_pitch - att.pitch)/rate*YAW_SCALE);
+  prev_roll = att.roll;
+  prev_pitch = att.pitch;
+  can_yaw.buf[0]=dof_yaw.b[1];
+  can_yaw.buf[1]=dof_yaw.b[0];
+  can_yaw.buf[2]=yaw_roll.b[1];
+  can_yaw.buf[3]=yaw_roll.b[0];
+  can_yaw.buf[4]=yaw_pitch.b[1];
+  can_yaw.buf[5]=yaw_pitch.b[0];
   
   if (CAN[0].en)
       CANbus.write(can_pos);  
@@ -638,6 +655,8 @@ void can_send(){
       CANbus.write(can_lap); 
   if (CAN[6].en)   
       CANbus.write(can_dof2);  
+  if (CAN[7].en)   
+      CANbus.write(can_yaw); 
 }
 
 

@@ -8,6 +8,10 @@
 #include "BMsg838.h"
 #include <stdlib.h>
 
+#define ACC_SCALE 1000
+#define YAW_SCALE 100
+#define NUM_CAN_FRAME  8
+
 #define TIMECONV_JULIAN_DATE_START_OF_GPS_TIME (2444244.5)  // [days]
 #define TIMECONV_DAYS_IN_JAN 31
 #define TIMECONV_DAYS_IN_MAR 31
@@ -126,10 +130,10 @@ struct pt{
 const double EPS = 1E-9;
 
 extern float ax, ay, az, gx, gy, gz, mx, my, mz; 
-extern float heading, roll, pitch, yaw, temp, inclination; 
+extern float heading, roll, pitch, yaw, temp, inclination, yaw_rate; 
 extern float q[4];
 extern struct DOF_DATA att;
-extern struct CAN_DATA CAN[7];
+extern struct CAN_DATA CAN[NUM_CAN_FRAME];
 extern struct FLS_DATA FLS[3];
 
 #endif
