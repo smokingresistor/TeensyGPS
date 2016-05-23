@@ -80,6 +80,7 @@ String UTC_Time;
 struct DOF_DATA att;
 struct CAN_DATA CAN[NUM_CAN_FRAME];
 struct FLS_DATA FLS[3];
+struct PIT_DATA PIT[1];
 float ax, ay, az, gx, gy, gz, mx, my, mz; // variables to hold latest sensor data values 
 float heading, roll, pitch, yaw, temp, inclination, lap_distance; 
 float yaw_rate;

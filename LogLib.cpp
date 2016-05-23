@@ -27,6 +27,7 @@ StaticJsonBuffer<500> jsonBuffer2;
 StaticJsonBuffer<500> jsonBuffer3;
 StaticJsonBuffer<500> jsonBuffer4;
 StaticJsonBuffer<500> jsonBuffer5;
+StaticJsonBuffer<500> jsonBuffer6;
 const char* classConfig[number_JSON_object];
 
 char LineOut_name[3][10] = {"Disabled","High","Low"};
@@ -104,6 +105,12 @@ String CAN_name[NUM_CAN_FRAME] =
 String FLS_name[3] =  {"finish",
                        "pit_entry",
                        "pit_exit"};
+String PIT_name[6] =  {"pit_length",
+                       "pit_max_spd",
+                       "pit_time",
+                       "pit_acc",
+                       "ir_beacon",
+                       "gps_beacon"};
 char buffer[1000];
 PString tpvstring(buffer, sizeof(buffer));
 char buffer2[1000];
@@ -146,6 +153,7 @@ void update_EEPROM() {
   EEPROM.writeBlock(memBase3, ATT);
   EEPROM.writeBlock(memBase4, CAN);
   EEPROM.writeBlock(memBase5, FLS);
+  EEPROM.writeBlock(memBase5, PIT);
 }
 
 void read_EEPROM() {
@@ -155,6 +163,7 @@ void read_EEPROM() {
   EEPROM.readBlock(memBase3, ATT);
   EEPROM.readBlock(memBase4, CAN);
   EEPROM.readBlock(memBase5, FLS);
+  EEPROM.readBlock(memBase6, PIT);
 }
 
 void parseJSON() {
@@ -195,6 +204,7 @@ void parseJSON() {
       JsonObject& config3 = jsonBuffer3.parseObject(configData[2]);
       JsonObject& config4 = jsonBuffer4.parseObject(configData[3]);
       JsonObject& config5 = jsonBuffer5.parseObject(configData[4]);
+      JsonObject& config6 = jsonBuffer6.parseObject(configData[5]);
       if (!(config1.success() && config2.success() && config3.success() && config4.success())) {
           Serial.println("parseObject() failed");
           parse_success = 0;
@@ -237,6 +247,14 @@ void parseJSON() {
           FLS[i].maxSpeed = config5 [FLS_name[i]][6];
           FLS[i].minSpeed = config5 [FLS_name[i]][7];
       };    
+      for (i = 0; i < 1; i++){
+          PIT[i].pit_length = config6 [PIT_name[0]];
+          PIT[i].pit_max_spd = config6 [PIT_name[1]];
+          PIT[i].pit_time = config6 [PIT_name[2]];
+          PIT[i].pit_acc = config6 [PIT_name[3]];
+          PIT[i].ir_beacon = config6 [PIT_name[4]];
+          PIT[i].gps_beacon = config6 [PIT_name[5]];
+      };
       Serial.println("Update EEPROM");
       update_EEPROM();
    }
@@ -278,9 +296,10 @@ void printJSON(){
     };
     Serial.println();
     Serial.print("FLS");
-    Serial.print(" ");
+    Serial.println(" ");
     for (int i = 0; i < 3; i++){
         if (FLS[i].en)
+            Serial.print("     ");
             Serial.print(FLS_name[i]);
             Serial.print(": ");
             Serial.print(FLS[i].lat_A, 7);
@@ -293,9 +312,25 @@ void printJSON(){
             Serial.print(" ");
             Serial.print(FLS[i].lineOut);
             Serial.print(" ");
-            Serial.print(FLS[i].minSpeed, 7);
-            Serial.print(" ");
             Serial.print(FLS[i].maxSpeed, 7);
+            Serial.print(" ");
+            Serial.print(FLS[i].minSpeed, 7);
+        Serial.println(" ");
+    };
+    Serial.print("PIT");
+    for (int i = 0; i < 1; i++){
+        Serial.print(" ");
+        Serial.print(PIT[i].pit_length, 7);
+        Serial.print(" ");
+        Serial.print(PIT[i].pit_max_spd, 7);
+        Serial.print(" ");
+        Serial.print(PIT[i].pit_time, 7);
+        Serial.print(" ");
+        Serial.print(PIT[i].pit_acc, 7);
+        Serial.print(" ");
+        Serial.print(PIT[i].ir_beacon);
+        Serial.print(" ");
+        Serial.print(PIT[i].gps_beacon);
         Serial.println(" ");
     };
     Serial.println();

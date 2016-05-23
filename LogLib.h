@@ -30,8 +30,9 @@
 #define memBase3   1024
 #define memBase4   1280
 #define memBase5   1536
+#define memBase6   1792
 #define EEPROMSize 2048
-#define number_JSON_object 5
+#define number_JSON_object 6
 
 extern int chipSelect;
 extern int mosi;
@@ -96,6 +97,15 @@ struct FLS_DATA{
   double minSpeed;
 };
 
+struct PIT_DATA{
+  float pit_length;
+  float pit_max_spd;
+  float pit_time;
+  float pit_acc;
+  boolean ir_beacon;
+  boolean gps_beacon;
+};
+
 extern char LineOut_name[3][10];
 
 struct DOF_DATA{
@@ -135,5 +145,5 @@ extern float q[4];
 extern struct DOF_DATA att;
 extern struct CAN_DATA CAN[NUM_CAN_FRAME];
 extern struct FLS_DATA FLS[3];
-
+extern struct PIT_DATA PIT[1];
 #endif
