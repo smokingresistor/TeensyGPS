@@ -46,7 +46,7 @@ const String fixmodmask[]={"no fix", "2D", "3D", "3D+DGNSS"};
 
 
 FlexCAN CANbus(1000000);
-static CAN_message_t can_pos,can_nav,can_pos_fil,can_nav_fil, can_dof1, can_dof2, can_lap, can_yaw;
+static CAN_message_t can_pos,can_nav,can_pos_fil,can_nav_fil, can_dof1, can_dof2, can_lap, can_gyr;
 
 
 /*gps interfacce relate class*/
@@ -61,7 +61,7 @@ KalmanFilter filter;
 KalmanFilterVA filterVA;
 
 union conv lat, lon, lat_fil, lon_fil;
-union conv_short alt, alt_fil, dof_roll, dof_pitch, acc_x, acc_y, acc_z, q1, q2, q3, q4, dof_yaw, yaw_roll, yaw_pitch;
+union conv_short alt, alt_fil, dof_yaw, dof_roll, dof_pitch, acc_x, acc_y, acc_z, q1, q2, q3, q4, gyr_x, gyr_y, gyr_z;
 union conv_short_u pressure, vel, vel_fil, course, lap_dist, stint_time;
 
 int led = 13;
@@ -146,7 +146,6 @@ void setup()
   if (can_speed) 
     {       
        can_pos.id=CAN[0].id;
-       Serial.println(CAN[0].id,HEX);
        can_pos.len = 8;
        can_nav.id=CAN[1].id;
        can_nav.len = 8;
@@ -160,8 +159,8 @@ void setup()
        can_lap.len=8;
        can_dof2.id=CAN[6].id;
        can_dof2.len=8;
-       can_yaw.id=CAN[7].id;
-       can_yaw.len=6;
+       can_gyr.id=CAN[7].id;
+       can_gyr.len=6;
        CANbus.begin(); 
        digitalWrite(led,led_on); 
     }
@@ -547,12 +546,18 @@ void can_send(){
   lap_dist.f = (uint16_t)(lap_distance*2.5);     
   dof_roll.f = (int16_t)(att.roll*100);
   dof_pitch.f = (int16_t)(att.pitch*100);
-  dof_yaw.f = (int16_t)att.yaw;
+  dof_yaw.f = (int16_t)(att.yaw*100);
   pressure.f = (uint16_t)0;               //to do
-  acc_x.f = (int16_t)att.acc_x;
-  acc_y.f = (int16_t)att.acc_y;
-  acc_z.f = (int16_t)att.acc_z;
+  
+  acc_x.f = (int16_t)(att.acc_x*100);
+  acc_y.f = (int16_t)(att.acc_y*100);
+  acc_z.f = (int16_t)(att.acc_z*100);
+  
+  gyr_x.f = (int16_t)(att.gyro_x*100);
+  gyr_y.f = (int16_t)(att.gyro_y*100);
+  gyr_z.f = (int16_t)(att.gyro_z*100);
   stint_time.f=stint_duration*100; //Stint duration in 1/100 of minutes, max 655 minutes of stint duration.
+  
   /*
   q1.f = q[0]*100;//att.quat1;
   q2.f = q[1]*100;//att.quat2;
@@ -629,17 +634,13 @@ void can_send(){
   can_dof2.buf[6]=q4.b[1];
   can_dof2.buf[7]=q4.b[0];  
   //8 frame
-  dof_yaw.f   = (int16_t) att.yaw;
-  yaw_roll.f  = (int16_t)((prev_roll - att.roll)/rate*YAW_SCALE);
-  yaw_pitch.f = (int16_t)((prev_pitch - att.pitch)/rate*YAW_SCALE);
-  prev_roll = att.roll;
-  prev_pitch = att.pitch;
-  can_yaw.buf[0]=dof_yaw.b[1];
-  can_yaw.buf[1]=dof_yaw.b[0];
-  can_yaw.buf[2]=yaw_roll.b[1];
-  can_yaw.buf[3]=yaw_roll.b[0];
-  can_yaw.buf[4]=yaw_pitch.b[1];
-  can_yaw.buf[5]=yaw_pitch.b[0];
+
+  can_gyr.buf[0]=gyr_x.b[1];
+  can_gyr.buf[1]=gyr_x.b[0];
+  can_gyr.buf[2]=gyr_y.b[1];
+  can_gyr.buf[3]=gyr_y.b[0];
+  can_gyr.buf[4]=gyr_z.b[1];
+  can_gyr.buf[5]=gyr_z.b[0];
   
   if (CAN[0].en)
       CANbus.write(can_pos);  
@@ -656,8 +657,7 @@ void can_send(){
   if (CAN[6].en)   
       CANbus.write(can_dof2);  
   if (CAN[7].en)   
-      CANbus.write(can_yaw); 
+      CANbus.write(can_gyr); 
 }
-
 
 
