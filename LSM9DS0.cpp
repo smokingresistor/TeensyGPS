@@ -73,7 +73,7 @@ static const int16_t dec_tbl[37][73] = \
 float deltat = 0.0f;        // integration interval for both filter schemes
 uint32_t lastUpdate = 0;    // used to calculate integration interval
 uint32_t now = 0;           // used to calculate integration interval
-float abias[3] = {0, 0, 0}, gbias[3] = {0, 0, 0};
+float abias[3] = {0, 0, 0}, gbias[3] = {-0.7, -6, -4};
 
 LSM9DS0 dof(MODE_I2C, LSM9DS0_G, LSM9DS0_XM);
 
@@ -347,8 +347,6 @@ void sensor_9dof_read()
   roll = atan2(2*(q[0]*q[1]+q[2]*q[3]),(1-2*(sq(q[1])+sq(q[2]))))*180.0/M_PI;
   pitch = asin(2*(q[0]*q[2]-q[3]*q[1]))*180.0/M_PI;
   yaw = atan2(2*(q[0]*q[3]+q[1]*q[2]), (1-2*(sq(q[2])+sq(q[3]))))*180.0/M_PI;
-  yaw_rate = (prev_yaw - yaw)/50.0;
-  prev_yaw = yaw;
   if ((az < 0)&&(pitch > 0))
      pitch = 180 - pitch; // pitch change from 0 to 180 degree
   if ((az < 0)&&(pitch < 0))
@@ -390,8 +388,8 @@ void print_9dof_data()
   Serial.println(roll, 7);
   Serial.print("Pitch: ");
   Serial.println(pitch, 7);
-  Serial.print("Yaw rate: ");
-  Serial.println(yaw_rate*YAW_SCALE, 7);
+  Serial.print("Yaw: ");
+  Serial.println(yaw, 7);
   Serial.print("Heading: ");
   Serial.println(heading, 7);
   Serial.print("Inclination: ");
@@ -408,5 +406,4 @@ void print_9dof_data()
   Serial.print(q[3], 7);
   Serial.println(",");
 }
-
 
