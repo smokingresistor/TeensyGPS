@@ -32,11 +32,11 @@ const char* classConfig[number_JSON_object];
 
 char LineOut_name[3][10] = {"Disabled","High","Low"};
 
-float CNF [27];
-boolean TPV [22];
+float CNF [15];
+boolean TPV [19];
 boolean ATT [24];
 
-String CNF_name[27] = {"log_en", 
+String CNF_name[15] = {"log_en", 
                        "canspeed", 
                        "newlog", 
                        "rate", 
@@ -51,7 +51,7 @@ String CNF_name[27] = {"log_en",
                        "intv", 
                        "min", 
                        "max"};
-String TPV_name[22] = {"device", 
+String TPV_name[19] = {"device", 
                        "mode", 
                        "sv",
                        "time", 
@@ -92,7 +92,8 @@ String ATT_name[24] = {"device",
                        "quat2",
                        "quat3",
                        "quat4",
-                       "temp"};
+                       "temp",
+                       "pressure"};
 String CAN_name[NUM_CAN_FRAME] =  
                       {"can00",
                        "can01",
@@ -213,15 +214,15 @@ void parseJSON() {
           parse_success = 1;
       }
       classConfig[0] = config1["class"];
-      for (i = 0; i < 26; i++){
+      for (i = 0; i < sizeof(CNF)/4; i++){
           CNF[i] = config1 [CNF_name[i]];
       };
       classConfig[1] = config2["class"];
-      for (i = 0; i < 21; i++){
+      for (i = 0; i < sizeof(TPV); i++){
           TPV[i] = config2 [TPV_name[i]];
       };
       classConfig[2] = config3["class"];
-      for (i = 0; i < 23; i++){
+      for (i = 0; i < sizeof(ATT); i++){
           ATT[i] = config3 [ATT_name[i]];
       };
       classConfig[3] = config4["class"];
@@ -268,21 +269,21 @@ void parseJSON() {
 void printJSON(){
     Serial.print("CNF");
     Serial.print(" ");
-    for (int i = 0; i < 26; i++){
+    for (int i = 0; i < sizeof(CNF)/4; i++){
         Serial.print(CNF[i]);
         Serial.print(" ");
     };
     Serial.println();
     Serial.print("TPV");
     Serial.print(" ");
-    for (int i = 0; i < 21; i++){
+    for (int i = 0; i < sizeof(TPV); i++){
         Serial.print(TPV[i]);
         Serial.print(" ");
     };
     Serial.println();
     Serial.print("ATT");
     Serial.print(" ");
-    for (int i = 0; i < 23; i++){
+    for (int i = 0; i < sizeof(ATT); i++){
         Serial.print(ATT[i]);
         Serial.print(" ");
     };
@@ -396,11 +397,11 @@ void create_newlog(){
     dataFile = SD.open(namefile, FILE_WRITE);           
     delay(100);
     if (dataFile){
-        for (int i = 0; i < 21; i++){
+        for (int i = 0; i < sizeof(TPV); i++){
            header = header + check_TPV(i);
         }
         header = "class," + header + "class,";
-        for (int i = 0; i < 23; i++){
+        for (int i = 0; i < sizeof(ATT); i++){
            header = header + check_ATT(i);
         }
         dataFile.println(header);
@@ -508,6 +509,7 @@ void LogATT(){
     att.quat3 = q[2];
     att.quat4 = q[3];
     att.temp = temp;
+    att.pressure = bmp280_pressure;
     Serial.println("Print ATT object"); 
     if (!dataFile) 
          dataFile = SD.open(namefile, O_WRITE);
@@ -560,6 +562,8 @@ void LogATT(){
         dataFloatATT(att.quat4, 0);
     if(ATT[22])
         dataFloatATT(att.temp, 0);
+    if(ATT[23])
+        dataFloatATT(att.pressure, 0);
     num_cycle =  num_cycle + 1;
     dataFile.print(attstring);
     dataFile.println();
@@ -595,7 +599,7 @@ void LogATT_nosd()
     att.quat3 = q[2];
     att.quat4 = q[3];
     att.temp = temp;
-    
+    att.pressure = bmp280_pressure;
 }
 
 boolean TIMECONV_GetJulianDateFromGPSTime(

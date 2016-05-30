@@ -394,6 +394,7 @@ void print_9dof_data()
   Serial.println(heading, 7);
   Serial.print("Inclination: ");
   Serial.println(inclination, 7);
+  Serial.print("Pressure: "); Serial.print(bmp280_pressure, 3); Serial.println("  \mBar");
   Serial.print(F(" "));
   Serial.println("**********************\n");
 

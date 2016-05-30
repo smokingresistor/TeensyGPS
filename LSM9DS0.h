@@ -14,6 +14,7 @@ extern int INT2XM;
 extern int DRDYG;
 extern float ax, ay, az, gx, gy, gz, mx, my, mz; 
 extern float heading, roll, pitch, yaw, temp, inclination, yaw_rate; 
+extern float bmp280_pressure;
 extern float q[4];
 
 extern void MadgwickQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz);

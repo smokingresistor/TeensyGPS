@@ -48,8 +48,8 @@ extern boolean file_open;
 extern int fileNum;
 extern char namefile[13];
 extern const char* classConfig[number_JSON_object];
-extern float CNF [27];
-extern boolean TPV [22];
+extern float CNF [15];
+extern boolean TPV [19];
 extern boolean ATT [24];
 
 extern void LogSetup();
@@ -130,6 +130,7 @@ struct DOF_DATA{
   float quat3;
   float quat4;
   float temp;
+  float pressure;
 };
 
 struct pt{
@@ -140,7 +141,8 @@ struct pt{
 const double EPS = 1E-9;
 
 extern float ax, ay, az, gx, gy, gz, mx, my, mz; 
-extern float heading, roll, pitch, yaw, temp, inclination, yaw_rate; 
+extern float heading, roll, pitch, yaw, temp, inclination, yaw_rate;
+extern float bmp280_pressure;
 extern float q[4];
 extern struct DOF_DATA att;
 extern struct CAN_DATA CAN[NUM_CAN_FRAME];

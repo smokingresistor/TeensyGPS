@@ -17,8 +17,10 @@
 #include <PString.h>
 #define SIMPLEFIFO_LARGE
 #include <SimpleFIFO.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BMP280.h>
 
-
+Adafruit_BMP280 bme; // I2C
 
 const String fixmodmask[]={"no fix", "2D", "3D", "3D+DGNSS"};
 /* This sample code demonstrates the normal use of the binary message of 
@@ -84,6 +86,7 @@ struct PIT_DATA PIT[1];
 float ax, ay, az, gx, gy, gz, mx, my, mz; // variables to hold latest sensor data values 
 float heading, roll, pitch, yaw, temp, inclination, lap_distance; 
 float yaw_rate;
+float bmp280_pressure;
 float q[4] = {1.0f, 0.0f, 0.0f, 0.0f};    // vector to hold quaternion
 pt prev_gps;  //curr_gps removed, structs of points defined in loglib.h
 float Timer_50Hz = 20; //20ms
@@ -122,6 +125,7 @@ void setup()
     Long_buffer.enqueue(0.0);
   }
   Serial.begin(115200); 
+  bme.begin();
   sensor_9dof_configure();
   delay(1000);
   pinMode(led, OUTPUT);
@@ -223,6 +227,7 @@ void loop()
       if (now_time - prev_time > Timer_50Hz){
 //          Serial.println(now_time);
           sensor_9dof_read();
+          bmp280_pressure = bme.readPressure()/100.0; //pressure in mBar
           prev_time = now_time;
       }
       int ret=0;
@@ -548,7 +553,7 @@ void can_send(){
   dof_roll.f = (int16_t)(att.roll*100);
   dof_pitch.f = (int16_t)(att.pitch*100);
   dof_yaw.f = (int16_t)(att.yaw*100);
-  pressure.f = (uint16_t)0;               //to do
+  pressure.f = (uint16_t)(bmp280_pressure*10);
   
   acc_x.f = (int16_t)(att.acc_x*100);
   acc_y.f = (int16_t)(att.acc_y*100);
