@@ -45,11 +45,9 @@ const String fixmodmask[]={"no fix", "2D", "3D", "3D+DGNSS"};
     uint8_t b[2];
   };
 
-
-
+/*can bus and can messages initialisation*/
 FlexCAN CANbus(1000000);
 static CAN_message_t can_pos,can_nav,can_pos_fil,can_nav_fil, can_dof1, can_dof2, can_lap, can_gyr;
-
 
 /*gps interfacce relate class*/
 BMsg838 gps;
@@ -62,12 +60,15 @@ Metro led_blink= Metro(50);
 KalmanFilter filter;
 KalmanFilterVA filterVA;
 
+/*variables for conversion from float to 4 uint8_t*/
 union conv lat, lon, lat_fil, lon_fil;
+/*variables for conversion from int16_t to 2 uint8_t*/
 union conv_short alt, alt_fil, dof_yaw, dof_roll, dof_pitch, acc_x, acc_y, acc_z, q1, q2, q3, q4, gyr_x, gyr_y, gyr_z;
+/*variables for conversion from uint16_t to 2 uint8_t*/
 union conv_short_u pressure, vel, vel_fil, course, lap_dist, stint_time;
 
+/*led pin*/
 int led = 13;
-
 boolean led_on=1;
 boolean file_cutted=false;
 
@@ -79,10 +80,13 @@ int newlog, rate, can_speed, max_filesize, filesize, log_type, trig, intv;
 float blat, blong, btime, btol, course_angle, trigv, min_val, max_val, stint_duration;
 String UTC_Time;
 
+/*structures for config data*/
 struct DOF_DATA att;
 struct CAN_DATA CAN[NUM_CAN_FRAME];
 struct FLS_DATA FLS[3];
 struct PIT_DATA PIT[1];
+
+/*variables for 9dof data*/
 float ax, ay, az, gx, gy, gz, mx, my, mz; // variables to hold latest sensor data values 
 float heading, roll, pitch, yaw, temp, inclination, lap_distance; 
 float yaw_rate;
@@ -109,13 +113,15 @@ line beacons[3];
 int pin_beacon[3] = {26, 27, 28}; //26 27 28 for New board 33 32 31 for Bt board
 
 //////////////////////////////////////
-
+// buffers fo gps coordinates 
 const int bearing_buffer=10;
 SimpleFIFO<float,bearing_buffer> Lat_buffer;
 SimpleFIFO<float,bearing_buffer> Long_buffer;
 
 //////////////////////////////////////
-
+/// \fn setup
+/// \brief Initialisation hardware
+///
 void setup()
 {
   //intizialize the fifo buffer with garbage
@@ -124,32 +130,57 @@ void setup()
     Lat_buffer.enqueue(0.0);
     Long_buffer.enqueue(0.0);
   }
+  // Serial start with 115200 baudrate
   Serial.begin(115200); 
+  // BMP280 start
   bme.begin();
+  // LSM9DS0 start
   sensor_9dof_configure();
+  // Delay 1 sec
   delay(1000);
+  // Setup pin for led
   pinMode(led, OUTPUT);
+  // Call function in Loglib.cpp
   LogSetup();
+  // Set can speed (1000000, 500000, 250000, 100000, 50000 bps)
   can_speed = CNF[1];
+  // Set new log (0:Disabled, 1:Enabled)
   newlog = CNF[2];
+  // Set GPS update rate (1, 2, 4, 5, 8, 10, 20, 25, 40, 50 Hz)
   rate = CNF[3];
+  // Set maximum file size (MBytes)
   max_filesize = CNF[4];
+  // Set beacon latitude
   blat = CNF[5];
+  // Set beacon longitude
   blong = CNF[6];
+  // Set beacon timeout
   btime = CNF[7];
+  // Set beacon tolerance
   btol = CNF[8];
+  // Set type of data logging (0:Continuous, 1:Trigger, 2:Interval)
   log_type = CNF[9];
+  // Set data trigger type (0:Longitude, 1:Latitude, 2:Altitude, 3:Speed, 4:UTC Time, 5:UTC Date)
   trig = CNF[10];
+  // Set trigger value
   trigv = CNF[11];
+  // Set the type of interval (0:min/max time, 1:min/max distance, 2:min/max speed)
   intv = CNF[12];
+  // Set minimum value to enable logging (ex: 60 seconds after power on)
   min_val = CNF[13];
+  // Set maximum value to disable logging (ex: 3600 seconds after power on)
   max_val = CNF[14];
+  // Set file timeout time from beacon timeout
   file_time_cut.interval(btime*1000);
+  // Print file size in bytes
   Serial.println(filesize*1048576);
+  // Print newlog
   Serial.println(newlog);
+  // init Can bus
   FlexCAN CANbus(can_speed);
   if (can_speed) 
     {       
+       // setup CAN messages id and len
        can_pos.id=CAN[0].id;
        can_pos.len = 8;
        can_nav.id=CAN[1].id;
@@ -166,7 +197,9 @@ void setup()
        can_dof2.len=8;
        can_gyr.id=CAN[7].id;
        can_gyr.len=6;
+       // start CAN bus 
        CANbus.begin(); 
+       // Set led power on
        digitalWrite(led,led_on); 
     }
     
@@ -194,13 +227,14 @@ void setup()
       }
       Serial.println("Lap beacon enabled");
     }
+  // Start serial for gps communication
   Serial2.begin(115200);
   char messagetype[64];
   memset(messagetype,0,64);
   Serial.print("Testing BMsg838 binary message library v. "); 
   Serial.println();
-  
   Serial.print(" BMsg838 System reset.\r\n"); 
+  // setup GPS with messages
   SendBinaryMessagetoGPSreceiver(gps.ResetGNSS(1, 15, 6, 9,11, 30, 25, 20, 133, 1200), gps.SendStream,gps.RecVBinarybuf,0,2000);
   SendBinaryMessagetoGPSreceiver(gps.SetSerialPort(115200, 1), gps.SendStream,gps.RecVBinarybuf,0,2000);
   SendBinaryMessagetoGPSreceiver(gps.SetBinaryMessagetype(), gps.SendStream,gps.RecVBinarybuf,0,2000); 
@@ -218,12 +252,15 @@ void setup()
 //receiv Navigation binary data from GPS receiver and find positopn and velocity data 
 //and after do kalmanfiltering 
 
+// main loop
 void loop()
 {
+  // Open file for logging
   dataFile = SD.open(namefile, FILE_WRITE);
   while (1)
   {
       float now_time = millis();
+      // read 9 dof data and BMP280 with 50Hz cycle
       if (now_time - prev_time > Timer_50Hz){
 //          Serial.println(now_time);
           sensor_9dof_read();
@@ -236,6 +273,7 @@ void loop()
       if(Serial2.available()){
 //           Serial.println("Start loop");
 //           Serial.println(millis());
+           // read number of returned bytes
            ret=waitingRespondandReceive(gps.RecVBinarybuf,0xA8,2000); 
            if(ret>7){        
                 if(!GPSNavigationMsgProcessing(&(gps.venus838data_raw),&(gps.venus838data_filter),gps,&filter, &filterVA))
@@ -271,12 +309,16 @@ void loop()
                 */
     
     //Serial.print("UTC time: ");
+    // Get UTC Time
     UTC_Time = GetUTCTime(gps.venus838data_raw.gps_week, gps.venus838data_raw.timeofweek);
     //Serial.println(UTC_Time);
+    // Put last gps coordinates to buffer
     Lat_buffer.enqueue(gps.venus838data_raw.Latitude);
     Long_buffer.enqueue(gps.venus838data_raw.Longitude);     
+    // Take first gps coordinates from buffer
     prev_gps.lat=Lat_buffer.dequeue();
-    prev_gps.lon=Long_buffer.dequeue();              
+    prev_gps.lon=Long_buffer.dequeue();     
+    // Calc course angle    
     course_angle = gps.course_to(gps.venus838data_raw.Latitude, gps.venus838data_raw.Longitude, prev_gps.lat, prev_gps.lon);   
     //Calculate lap distance
     
@@ -291,9 +333,9 @@ void loop()
     lap_distance=lap_distance+temp*gps.venus838data_raw.velocity;  //Lap distance in meters   
     temp=temp/60;
     stint_duration = stint_duration + temp;  //stint duration in minutes
-    
+
     if (beacon_output)
-        check_beacon_dist();
+        check_beacon_dist(); 
     
     if (can_speed)
     {
@@ -529,6 +571,7 @@ boolean get_line_intersection(float p0_x, float p0_y, float p1_x, float p1_y,flo
     return true;
 }
 
+/// \fn can_send
 void can_send(){
   static float prev_roll, prev_pitch;
   if (led_blink.check())

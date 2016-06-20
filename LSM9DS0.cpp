@@ -77,7 +77,9 @@ float abias[3] = {0, 0, 0}, gbias[3] = {-0.7, -6, -4};
 
 LSM9DS0 dof(MODE_I2C, LSM9DS0_G, LSM9DS0_XM);
 
-
+/// \fn get_declination
+/// \brief Return declination from gps coordinates \n
+/// 
 float get_declination(float lat, float lon)
 {
     int16_t decSW, decSE, decNW, decNE, lonmin, latmin;
@@ -100,6 +102,9 @@ float get_declination(float lat, float lon)
     return (lat - latmin) / 5 * (decmax - decmin) + decmin;
 }
 
+/// \fn MahonyQuaternionUpdate
+/// \brief Return quaternions from 9 dof data \n
+/// 
 void MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz)
     {
         float q1 = q[0], q2 = q[1], q3 = q[2], q4 = q[3];   // short name local variable for readability
@@ -190,7 +195,9 @@ void MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, fl
 
     }
     
-
+/// \fn MadgwickQuaternionUpdate
+/// \brief Return quaternions from 9 dof data \n
+/// 
 void MadgwickQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz)
 {
   float q1 = q[0], q2 = q[1], q3 = q[2], q4 = q[3];   // short name local variable for readability
@@ -282,6 +289,12 @@ void MadgwickQuaternionUpdate(float ax, float ay, float az, float gx, float gy, 
   q[3] = q4 * norm;
 }
 
+/// \fn sensor_9dof_configure
+/// \brief Configure 9dof sensor \n
+/// \detailed
+/// 1. Set 4G diapason for accels \n
+/// 2. Set 245 degree per second diapason for gyros \n
+/// 3. Set 2 Gauss diapason for magnetometers \n
 void sensor_9dof_configure()
 {
   pinMode(INT1XM, INPUT);
@@ -299,12 +312,18 @@ void sensor_9dof_configure()
   dof.calLSM9DS0(gbias, abias);
 }
 
+/// \fn
+/// \brief Scale accels data by factor 1.5 (see datasheet) \n
+///
 void scale_accel_16g(){  //need to set abias
   dof.ax = 1.5 * dof.ax;
   dof.ay = 1.5 * dof.ay;
   dof.az = 1.5 * dof.az;
 }
 
+/// \fn sensor_9dof_read
+/// \brief Read 9dof sensor \n
+/// 
 void sensor_9dof_read()
 {
   float declination;
@@ -362,6 +381,9 @@ void sensor_9dof_read()
   print_9dof_data();
 }
 
+/// \fn print_9dof_data
+/// \brief Print 9dof data in serial \n
+///
 void print_9dof_data()
 {
   Serial.print("Delta T: "); Serial.println(deltat, 4);

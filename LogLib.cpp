@@ -119,6 +119,10 @@ PString attstring(buffer2, sizeof(buffer2));
 
 static int num_cycle = 0;
 
+/// \fn SetNulls
+/// \brief Generate part of file names \n
+/// \detailed 
+/// Add nulls to filenum and return string with format 00001 \n
 String SetNulls(){
   String n; 
   int numNulls = 0;
@@ -140,13 +144,20 @@ String SetNulls(){
   return n;
 }
 
+/// \fn incFileNum incFileNum
+/// \brief Increment file number and generate file name \n
+/// \detailed 
+/// Return name file (ex. LOG00001.CSV) \n
 void incFileNum() { 
   fileNum++;
   String s = "LOG" + SetNulls() + String(fileNum) + ".CSV";
   s.toCharArray(namefile,13);
 }
 
-
+/// \fn update_EEPROM
+/// \brief Save in EEPROM data from config.jsn \n
+/// \detailed
+/// Write data blocks (number of bytes is defined in loglib.h) to EEPROM \n
 void update_EEPROM() {
   EEPROM.setMemPool(memBase1, EEPROMSize);
   EEPROM.writeBlock(memBase1, CNF);
@@ -157,6 +168,10 @@ void update_EEPROM() {
   EEPROM.writeBlock(memBase5, PIT);
 }
 
+/// \fn read_EEPROM
+/// \brief Read config data from EEPROM \n
+/// \detailed
+/// Read data blocks (number of bytes is defined in loglib.h) from EEPROM \n
 void read_EEPROM() {
   EEPROM.setMemPool(memBase1, EEPROMSize);
   EEPROM.readBlock(memBase1, CNF);
@@ -167,6 +182,12 @@ void read_EEPROM() {
   EEPROM.readBlock(memBase6, PIT);
 }
 
+/// \fn parseJSON
+/// \brief Parse config.jsn file from SD card \n
+/// \detailed
+/// 1.Read config.jsn file and parse it \n
+/// 2.If parsing is failed print message in serial "parseObject() failed" \n
+/// 3.If parsing is ok update EEPROM \n
 void parseJSON() {
     char data, configData[number_JSON_object][500];
     int j = 0;
@@ -266,6 +287,10 @@ void parseJSON() {
    }
 }
 
+/// \fn printJSON
+/// \brief Print in serial config data \n
+/// \detailed
+/// Print CNF, TPV, ATT, CAN, FLS, PIT data \n
 void printJSON(){
     Serial.print("CNF");
     Serial.print(" ");
@@ -337,6 +362,9 @@ void printJSON(){
     Serial.println();
 }
 
+/// \fn checkTPV 
+/// \brief Return TPV name if enabled \n
+/// 
 String check_TPV(int num){
   if (TPV[num])
      return TPV_name[num]+",";
@@ -344,6 +372,9 @@ String check_TPV(int num){
      return "";
 }
 
+/// \fn checkATT
+/// \brief Return ATT name if enabled
+/// 
 String check_ATT(int num){
   if (ATT[num])
      return ATT_name[num]+",";
@@ -351,6 +382,13 @@ String check_ATT(int num){
      return "";
 }
 
+/// \fn LogSetup
+/// \brief Setup SD to log data \n
+/// \detailed
+/// 1. Setup pins MOSI, MISO, SCK for SD card \n
+/// 2. If SD card is not detected power off led and set sd_datalog false \n
+/// 3. If SD card is detected power on led and set sd_datalog true \n
+/// 4. Parse config.jsn file and print data config \n
 void LogSetup() {
  SPI.setMOSI(mosi);
  SPI.setMISO(miso);
@@ -385,6 +423,11 @@ void LogSetup() {
  
 }
 
+/// \fn create_newlog
+/// \brief Create newlog file \n
+/// \detailed
+/// 1. If file is presented on SD increment file num and create new file \n
+/// 2. Open file and save header from TPV and ATT data \n
 void create_newlog(){
     String header;
     while (SD.exists(namefile)) {      
@@ -414,6 +457,9 @@ void create_newlog(){
     }//if
 }
 
+/// \fn dataFloat
+/// \brief Print float data to string \n
+/// 
 void dataFloat(float value, int mode){
     char outstr[21];
     dtostrf(value, 20, 12, outstr);
@@ -422,6 +468,9 @@ void dataFloat(float value, int mode){
     tpvstring.print(",");
 }
 
+/// \fn dataFloatATT
+/// \brief Print float data to string \n
+/// 
 void dataFloatATT(float value, int mode){
     char outstr[21];
     dtostrf(value, 20, 12, outstr);
@@ -430,7 +479,9 @@ void dataFloatATT(float value, int mode){
     attstring.print(",");
 }
 
-
+/// \fn LogTPV
+/// \brief Print TPV data to tpvstring \n
+/// 
 void LogTPV(){
      tpvstring.begin();
      Serial.println("Print TPV object"); 
@@ -486,6 +537,9 @@ void LogTPV(){
       dataFile.print(tpvstring);
 }
 
+/// \fn LogATT
+/// \brief Print ATT data to attstring \n
+/// 
 void LogATT(){
     attstring.begin();
     att.heading = heading;
@@ -575,6 +629,9 @@ void LogATT(){
     }
 }
 
+/// \fn LogATT_nosd
+/// \brief Save att parameters to att struct when not logged on SD card
+/// 
 void LogATT_nosd()
 {
     attstring.begin();
@@ -602,6 +659,9 @@ void LogATT_nosd()
     att.pressure = bmp280_pressure;
 }
 
+/// \fn 
+/// \brief Fuction that need to get Julian Date from GPS time
+/// 
 boolean TIMECONV_GetJulianDateFromGPSTime(
    const int              gps_week,      //!< GPS week (0-1024+)             [week]
    const unsigned long    gps_tow,       //!< GPS time of week (0-604800.0)  [s]
