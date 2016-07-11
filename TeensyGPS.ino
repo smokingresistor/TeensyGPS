@@ -183,10 +183,10 @@ void setup()
        // setup CAN messages id and len
        can_pos.id=CAN[0].id;
        can_pos.len = 8;
-       can_nav.id=CAN[1].id;
-       can_nav.len = 8;
-       can_pos_fil.id=CAN[2].id;
+       can_pos_fil.id=CAN[1].id;
        can_pos_fil.len = 8;
+       can_nav.id=CAN[2].id;
+       can_nav.len = 8;
        can_nav_fil.id=CAN[3].id;
        can_nav_fil.len = 8;
        can_dof1.id = CAN[4].id;
@@ -624,7 +624,7 @@ void can_send(){
   can_pos.buf[5]=lon.b[2];
   can_pos.buf[6]=lon.b[1];
   can_pos.buf[7]=lon.b[0];
-  //3 frame - filter data
+  //2 frame - filter data
   can_pos_fil.buf[0]=lat_fil.b[3];
   can_pos_fil.buf[1]=lat_fil.b[2];
   can_pos_fil.buf[2]=lat_fil.b[1];
@@ -633,7 +633,7 @@ void can_send(){
   can_pos_fil.buf[5]=lon_fil.b[2];
   can_pos_fil.buf[6]=lon_fil.b[1];
   can_pos_fil.buf[7]=lon_fil.b[0];
-  //2 frame
+  //3 frame
   can_nav.buf[0]=alt.b[1];
   can_nav.buf[1]=alt.b[0];
   can_nav.buf[2]=vel.b[1];
@@ -652,7 +652,6 @@ void can_send(){
   can_nav_fil.buf[6]=lap_dist.b[1];
   can_nav_fil.buf[7]=lap_dist.b[0];  
   //5 frame
-  
   can_dof1.buf[0]=dof_roll.b[1];
   can_dof1.buf[1]=dof_roll.b[0];
   can_dof1.buf[2]=dof_pitch.b[1];
