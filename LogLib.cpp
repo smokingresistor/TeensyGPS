@@ -22,12 +22,12 @@ int fileNum = 0;
 char namefile[13]="LOG00001.CSV";
 char nameConfig[12]="config.jsn";
 
-StaticJsonBuffer<500> jsonBuffer1;
-StaticJsonBuffer<500> jsonBuffer2;
-StaticJsonBuffer<500> jsonBuffer3;
-StaticJsonBuffer<500> jsonBuffer4;
-StaticJsonBuffer<500> jsonBuffer5;
-StaticJsonBuffer<500> jsonBuffer6;
+StaticJsonBuffer<600> jsonBuffer1;
+StaticJsonBuffer<600> jsonBuffer2;
+StaticJsonBuffer<600> jsonBuffer3;
+StaticJsonBuffer<600> jsonBuffer4;
+StaticJsonBuffer<600> jsonBuffer5;
+StaticJsonBuffer<600> jsonBuffer6;
 const char* classConfig[number_JSON_object];
 
 char LineOut_name[3][10] = {"Disabled","High","Low"};
@@ -112,9 +112,9 @@ String PIT_name[6] =  {"pit_length",
                        "pit_acc",
                        "ir_beacon",
                        "gps_beacon"};
-char buffer[1000];
+char buffer[2000];
 PString tpvstring(buffer, sizeof(buffer));
-char buffer2[1000];
+char buffer2[2000];
 PString attstring(buffer2, sizeof(buffer2));
 
 static int num_cycle = 0;
