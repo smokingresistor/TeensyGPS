@@ -51,6 +51,7 @@ extern const char* classConfig[number_JSON_object];
 extern float CNF [15];
 extern boolean TPV [19];
 extern boolean ATT [24];
+extern char res[21];
 
 extern void LogSetup();
 extern void incFileNum();
@@ -63,6 +64,7 @@ extern String GetUTCTime (unsigned int gps_week, unsigned long gps_tow);
 
 String null_add(int value);
 void dataFloat(float value, int mode);
+char* del_space(char* src);
 
 boolean TIMECONV_GetNumberOfDaysInMonth(
    const unsigned short year,        //!< Universal Time Coordinated    [year]

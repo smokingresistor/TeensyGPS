@@ -116,6 +116,7 @@ char buffer[2000];
 PString tpvstring(buffer, sizeof(buffer));
 char buffer2[2000];
 PString attstring(buffer2, sizeof(buffer2));
+char res[21];
 
 static int num_cycle = 0;
 
@@ -463,8 +464,9 @@ void create_newlog(){
 void dataFloat(float value, int mode){
     char outstr[21];
     dtostrf(value, 20, 12, outstr);
+    char* str_without_space = del_space(outstr);
     if (gps.venus838data_raw.fixmode >= mode)
-        tpvstring.print (outstr);
+        tpvstring.print (str_without_space);
     tpvstring.print(",");
 }
 
@@ -474,9 +476,23 @@ void dataFloat(float value, int mode){
 void dataFloatATT(float value, int mode){
     char outstr[21];
     dtostrf(value, 20, 12, outstr);
+    char* str_without_space = del_space(outstr);
     if (gps.venus838data_raw.fixmode >= mode)
-        attstring.print (outstr);
+        attstring.print (str_without_space);
     attstring.print(",");
+}
+
+/// \del_space
+/// \brief delete space from string
+/// 
+char* del_space(char* src){
+   int i, j;
+   for(i = j = 0; src[i] != '\0'; i++)
+        if(src[i] != ' ')
+            res[j++] = src[i];
+   res[j] = '\0';
+   char *p = res;
+   return p;
 }
 
 /// \fn LogTPV
