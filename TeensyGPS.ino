@@ -47,7 +47,7 @@ const String fixmodmask[]={"no fix", "2D", "3D", "3D+DGNSS"};
 
 /*can bus and can messages initialisation*/
 FlexCAN CANbus(1000000);
-static CAN_message_t can_pos,can_nav,can_pos_fil,can_nav_fil, can_dof1, can_dof2, can_lap, can_gyr;
+static CAN_message_t can_pos,can_nav,can_pos_fil,can_nav_fil,can_dof1,can_dof2,can_lap,can_gyr,can_dop;
 
 /*gps interfacce relate class*/
 BMsg838 gps;
@@ -55,6 +55,7 @@ Metro beacon_timeout = Metro(30000);
 Metro beacon_trigger = Metro(250);
 Metro file_time_cut= Metro(300000);
 Metro led_blink= Metro(50);
+
 
 /*kalman filter class*/
 KalmanFilter filter;
@@ -65,7 +66,7 @@ union conv lat, lon, lat_fil, lon_fil;
 /*variables for conversion from int16_t to 2 uint8_t*/
 union conv_short alt, alt_fil, dof_yaw, dof_roll, dof_pitch, acc_x, acc_y, acc_z, q1, q2, q3, q4, gyr_x, gyr_y, gyr_z;
 /*variables for conversion from uint16_t to 2 uint8_t*/
-union conv_short_u pressure, vel, vel_fil, course, lap_dist, stint_time;
+union conv_short_u pressure, vel, vel_fil, course, lap_dist, stint_time, g_dop, p_dop, h_dop, v_dop, t_dop ;
 
 /*led pin*/
 int led = 13;
@@ -132,8 +133,9 @@ void setup()
   }
   // Serial start with 115200 baudrate
   Serial.begin(115200); 
+  delay(30000);
   // BMP280 start
-  bme.begin();
+  
   // LSM9DS0 start
   sensor_9dof_configure();
   // Delay 1 sec
@@ -181,22 +183,51 @@ void setup()
   if (can_speed) 
     {       
        // setup CAN messages id and len
+       // 1 Frame
        can_pos.id=CAN[0].id;
        can_pos.len = 8;
+       can_pos.timeout = 1;
+       
+       // 2 Frame
        can_pos_fil.id=CAN[1].id;
        can_pos_fil.len = 8;
+       can_pos_fil.timeout = 1;
+       
+       // 3 Frame
        can_nav.id=CAN[2].id;
        can_nav.len = 8;
+       can_nav.timeout = 1;
+       
+       // 4 Frame
        can_nav_fil.id=CAN[3].id;
        can_nav_fil.len = 8;
+       can_nav_fil.timeout = 1;
+       
+       // 5 Frame
        can_dof1.id = CAN[4].id;
        can_dof1.len = 8;
+       can_dof1.timeout = 1;
+       
+       // 6 Frame
        can_lap.id=CAN[5].id;
        can_lap.len=8;
+       can_lap.timeout = 1;
+       
+       // 7 Frame
        can_dof2.id=CAN[6].id;
        can_dof2.len=8;
+       can_dof2.timeout = 1;
+       
+       // 8 Frame
        can_gyr.id=CAN[7].id;
-       can_gyr.len=6;
+       can_gyr.len=8;
+       can_gyr.timeout = 1;
+       
+       // 9 Frame       
+       can_dop.id=CAN[8].id;
+       can_dop.len=8;
+       can_dop.timeout = 1;
+       
        // start CAN bus 
        CANbus.begin(); 
        // Set led power on
@@ -235,7 +266,7 @@ void setup()
   Serial.println();
   Serial.print(" BMsg838 System reset.\r\n"); 
   // setup GPS with messages
-  SendBinaryMessagetoGPSreceiver(gps.ResetGNSS(1, 15, 6, 9,11, 30, 25, 20, 133, 1200), gps.SendStream,gps.RecVBinarybuf,0,2000);
+  // SendBinaryMessagetoGPSreceiver(gps.ResetGNSS(1, 15, 6, 9,11, 30, 25, 20, 133, 1200), gps.SendStream,gps.RecVBinarybuf,0,2000);
   SendBinaryMessagetoGPSreceiver(gps.SetSerialPort(115200, 1), gps.SendStream,gps.RecVBinarybuf,0,2000);
   SendBinaryMessagetoGPSreceiver(gps.SetBinaryMessagetype(), gps.SendStream,gps.RecVBinarybuf,0,2000); 
   SendBinaryMessagetoGPSreceiver(gps.SetPositionRate(rate), gps.SendStream,gps.RecVBinarybuf,0,2000);
@@ -571,7 +602,8 @@ boolean get_line_intersection(float p0_x, float p0_y, float p1_x, float p1_y,flo
     return true;
 }
 
-/// \fn can_send
+//fn can_send
+
 void can_send(){
   static float prev_roll, prev_pitch;
   if (led_blink.check())
@@ -579,6 +611,7 @@ void can_send(){
      led_on=!led_on;
      digitalWrite(led,led_on);
   }
+  
   lat.f=(int32_t)(gps.venus838data_raw.Latitude*1E7); 
   lat_fil.f=(int32_t)(gps.venus838data_filter.Latitude*1E7);
   lon.f=(int32_t)(gps.venus838data_raw.Longitude*1E7);
@@ -587,6 +620,14 @@ void can_send(){
   alt_fil.f=(int16_t)(gps.venus838data_filter.SealevelAltitude*10);
   vel.f=(uint16_t)(gps.venus838data_raw.velocity*100*3.6);
   vel_fil.f=(uint16_t)(gps.venus838data_filter.velocity*100*3.6);
+  
+  g_dop.f=(uint16_t)(gps.venus838data_raw.gdop*100);
+  p_dop.f=(uint16_t)(gps.venus838data_raw.pdop*100);
+  h_dop.f=(uint16_t)(gps.venus838data_raw.hdop*100);
+  v_dop.f=(uint16_t)(gps.venus838data_raw.vdop*100);
+  t_dop.f=(uint16_t)(gps.venus838data_raw.tdop*100);
+  
+
   course_angle = course_angle*100;
   course.f=(uint16_t)(course_angle);
   sats=gps.venus838data_raw.NumSV;
@@ -669,10 +710,12 @@ void can_send(){
   can_lap.buf[6]=acc_z.b[1];
   can_lap.buf[7]=acc_z.b[0];  
   //7 frame
+  
   q1.f=q[0]*10000;
   q2.f=q[1]*10000;
   q3.f=q[2]*10000;
   q4.f=q[3]*10000;
+  
   can_dof2.buf[0]=q1.b[1];
   can_dof2.buf[1]=q1.b[0];
   can_dof2.buf[2]=q2.b[1];
@@ -681,19 +724,32 @@ void can_send(){
   can_dof2.buf[5]=q3.b[0];
   can_dof2.buf[6]=q4.b[1];
   can_dof2.buf[7]=q4.b[0];  
+  
   //8 frame
-
   can_gyr.buf[0]=gyr_x.b[1];
   can_gyr.buf[1]=gyr_x.b[0];
   can_gyr.buf[2]=gyr_y.b[1];
   can_gyr.buf[3]=gyr_y.b[0];
   can_gyr.buf[4]=gyr_z.b[1];
   can_gyr.buf[5]=gyr_z.b[0];
+  can_gyr.buf[6]=g_dop.b[1];
+  can_gyr.buf[7]=g_dop.b[0];
+
+  //9 frame
+  can_dop.buf[0]=p_dop.b[1];
+  can_dop.buf[1]=p_dop.b[0];
+  can_dop.buf[2]=h_dop.b[1];
+  can_dop.buf[3]=h_dop.b[0];
+  can_dop.buf[4]=v_dop.b[1];
+  can_dop.buf[5]=v_dop.b[0];
+  can_dop.buf[6]=t_dop.b[1];
+  can_dop.buf[7]=t_dop.b[0];
+  
   
   if (CAN[0].en)
       CANbus.write(can_pos);  
   if (CAN[1].en)    
-      CANbus.write(can_pos_fil); 
+      CANbus.write(can_pos_fil);
   if (CAN[2].en)
       CANbus.write(can_nav); 
   if (CAN[3].en)
@@ -706,6 +762,8 @@ void can_send(){
       CANbus.write(can_dof2);  
   if (CAN[7].en)   
       CANbus.write(can_gyr); 
-}
+  if (CAN[8].en)   
+      CANbus.write(can_dop);     
 
+}
 
