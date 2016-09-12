@@ -1,0 +1,64 @@
+VERSION ""
+
+
+BS_:
+
+BU_:
+
+
+BO_ 768 GPS_Position: 8 Vector__XXX
+ SG_ GPS_Lon : 39|32@0- (1e-007,1e-007) [-214.748|214.748] "°" Vector__XXX
+ SG_ GPS_Lat : 7|32@0- (1e-007,1e-007) [-214.748|214.748] "°" Vector__XXX
+
+BO_ 769 GPS_Nav_1: 8 Vector__XXX
+ SG_ GPS_Sats : 56|4@1+ (1,0) [0|15] "" Vector__XXX
+ SG_ GPS_Fix : 60|4@1+ (1,0) [0|15] "" Vector__XXX
+ SG_ GPS_Checksum : 55|8@0+ (1,0) [0|255] "" Vector__XXX
+ SG_ GPS_Course : 39|16@0+ (0.1,0) [0|6553.5] "°" Vector__XXX
+ SG_ GPS_Speed : 23|16@0+ (0.01,0) [0|655.35] "km/h" Vector__XXX
+ SG_ GPS_Altitude : 7|16@0+ (0.1,0) [0|6553.5] "m" Vector__XXX
+
+BO_ 770 GPS_Position_Filtered: 8 Vector__XXX
+ SG_ GPS_Lon_fil : 39|32@0- (0,1e-007) [1e-007|1e-007] "°" Vector__XXX
+ SG_ GPS_Lat_fil : 7|32@0- (1.1e-007,1e-007) [-236.223|236.223] "°" Vector__XXX
+
+BO_ 771 GPS_Nav_2: 8 Vector__XXX
+ SG_ GPS_Lap_dist : 55|16@0+ (0.4,0) [0|26214] "m" Vector__XXX
+ SG_ GPS_Stint_time : 39|16@0+ (0.01,0) [0|655.35] "min" Vector__XXX
+ SG_ GPS_Speed_filt : 23|16@0+ (0.01,0) [0|655.35] "km/h" Vector__XXX
+ SG_ GPS_Altitude_filt : 7|16@0+ (0.1,0) [0|6553.5] "m" Vector__XXX
+
+BO_ 772 GPS_Ahrs: 8 Vector__XXX
+ SG_ GPS_Pressure : 55|16@0+ (0.4,0) [0|26214] "mbar" Vector__XXX
+ SG_ GPS_Yaw : 39|16@0+ (0.01,0) [0|655.35] "°" Vector__XXX
+ SG_ GPS_Pitch : 23|16@0- (0.01,0) [-327.68|327.67] "°" Vector__XXX
+ SG_ GPS_Roll : 7|16@0- (0.01,0) [-327.68|327.67] "°" Vector__XXX
+
+BO_ 773 GPS_Aux_1: 8 Vector__XXX
+ SG_ GPS_Accz : 55|16@0- (0.01,0) [-327.68|327.67] "g" Vector__XXX
+ SG_ GPS_Accy : 39|16@0- (0.01,0) [-327.68|327.67] "g" Vector__XXX
+ SG_ GPS_Accx : 23|16@0- (0.01,0) [-327.68|327.67] "g" Vector__XXX
+ SG_ GPS_Temperature : 15|8@0- (1,0) [-128|127] "°C" Vector__XXX
+ SG_ GPS_Beacon : 7|8@0+ (1,0) [1.84467e+019|127] "" Vector__XXX
+
+BO_ 774 GPS_Aux_2: 8 Vector__XXX
+ SG_ Q4 : 55|16@0- (0.01,0) [-327.68|327.67] "" Vector__XXX
+ SG_ Q3 : 39|16@0- (0.01,0) [-327.68|327.67] "" Vector__XXX
+ SG_ Q2 : 23|16@0- (0.01,0) [-327.68|327.67] "" Vector__XXX
+ SG_ Q1 : 7|16@0- (0.01,0) [-327.68|327.67] "" Vector__XXX
+
+BO_ 775 GPS_Aux_3: 8 Vector__XXX
+ SG_ GDOP : 55|16@0+ (0.01,0) [0|655.35] "" Vector__XXX
+ SG_ gz : 39|16@0- (0.01,0) [-327.68|327.67] "°/s" Vector__XXX
+ SG_ gy : 23|16@0- (0.01,0) [-327.68|327.67] "°/s" Vector__XXX
+ SG_ gx : 7|16@0- (0.01,0) [-327.68|327.67] "*/s" Vector__XXX
+
+BO_ 776 DOP: 8 Vector__XXX
+ SG_ TDOP : 55|16@0+ (0.01,0) [0|655.35] "" Vector__XXX
+ SG_ VDOP : 39|16@0+ (0.01,0) [0|655.35] "" Vector__XXX
+ SG_ HDOP : 23|16@0+ (0.01,0) [0|655.35] "" Vector__XXX
+ SG_ PDOP : 7|16@0+ (0.01,0) [0|655.35] "" Vector__XXX
+
+
+
+
