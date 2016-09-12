@@ -22,12 +22,12 @@ int fileNum = 0;
 char namefile[13]="LOG00001.CSV";
 char nameConfig[12]="config.jsn";
 
-StaticJsonBuffer<600> jsonBuffer1;
-StaticJsonBuffer<600> jsonBuffer2;
-StaticJsonBuffer<600> jsonBuffer3;
-StaticJsonBuffer<600> jsonBuffer4;
-StaticJsonBuffer<600> jsonBuffer5;
-StaticJsonBuffer<600> jsonBuffer6;
+StaticJsonBuffer<700> jsonBuffer1;
+StaticJsonBuffer<700> jsonBuffer2;
+StaticJsonBuffer<700> jsonBuffer3;
+StaticJsonBuffer<700> jsonBuffer4;
+StaticJsonBuffer<700> jsonBuffer5;
+StaticJsonBuffer<700> jsonBuffer6;
 const char* classConfig[number_JSON_object];
 
 char LineOut_name[3][10] = {"Disabled","High","Low"};
@@ -94,6 +94,7 @@ String ATT_name[24] = {"device",
                        "quat4",
                        "temp",
                        "pressure"};
+                       
 String CAN_name[NUM_CAN_FRAME] =  
                       {"can00",
                        "can01",
@@ -102,19 +103,22 @@ String CAN_name[NUM_CAN_FRAME] =
                        "can04",
                        "can05",
                        "can06",
-                       "can07"};
+                       "can07",
+                       "can08"};
+                       
 String FLS_name[3] =  {"finish",
                        "pit_entry",
                        "pit_exit"};
+                       
 String PIT_name[6] =  {"pit_length",
                        "pit_max_spd",
                        "pit_time",
                        "pit_acc",
                        "ir_beacon",
                        "gps_beacon"};
-char buffer[2000];
+char buffer[2500];
 PString tpvstring(buffer, sizeof(buffer));
-char buffer2[2000];
+char buffer2[2500];
 PString attstring(buffer2, sizeof(buffer2));
 char res[21];
 
@@ -252,6 +256,7 @@ void parseJSON() {
           CAN[i].en = config4 [CAN_name[i]][0];
           CAN[i].id = config4 [CAN_name[i]][1];
       };
+      
       classConfig[4] = config5["class"];
       
       for (i = 0; i < 3; i++){
@@ -317,9 +322,12 @@ void printJSON(){
     Serial.print("Canbus output enabled on frames:");
     Serial.print(" ");
     for (int i = 0; i < NUM_CAN_FRAME; i++){
-        if (CAN[i].en)
-            Serial.print(CAN[i].id,HEX);
+        if (CAN[i].en){
+        Serial.print(i);
+        Serial.print(":");
+        Serial.print(CAN[i].id,HEX);
         Serial.print(" ");
+        }
     };
     Serial.println();
     Serial.print("FLS");
@@ -345,8 +353,9 @@ void printJSON(){
         Serial.println(" ");
     };
     Serial.print("PIT");
+    Serial.println(" ");
     for (int i = 0; i < 1; i++){
-        Serial.print(" ");
+        Serial.print("     ");
         Serial.print(PIT[i].pit_length, 7);
         Serial.print(" ");
         Serial.print(PIT[i].pit_max_spd, 7);
@@ -865,5 +874,4 @@ String null_add(int value){
      null = "";
   return null;
 }
-
 
