@@ -10,7 +10,7 @@
 
 #define ACC_SCALE 1000
 #define YAW_SCALE 100
-#define NUM_CAN_FRAME  8
+#define NUM_CAN_FRAME  9
 
 #define TIMECONV_JULIAN_DATE_START_OF_GPS_TIME (2444244.5)  // [days]
 #define TIMECONV_DAYS_IN_JAN 31
