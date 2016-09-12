@@ -133,9 +133,9 @@ void setup()
   }
   // Serial start with 115200 baudrate
   Serial.begin(115200); 
-  delay(30000);
+  //delay(30000);
   // BMP280 start
-  
+  bme.begin();
   // LSM9DS0 start
   sensor_9dof_configure();
   // Delay 1 sec
