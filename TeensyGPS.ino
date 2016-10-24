@@ -2,7 +2,7 @@
 //#include <SoftwareSerial.h>    //in case arduino board
 #include "BMsg838.h"
 #include "KalmanFilter.h"
-//#include "KalmanFilterVA"
+#include "KalmanFilterVA.h"
 #include "GPSSerialMessageCom.h"
 #include <SFE_LSM9DS0.h>
 #include <Wire.h>
