@@ -18,7 +18,7 @@ extern float heading, roll, pitch, yaw, temp, inclination, yaw_rate, prev_yaw;
 extern float bmp280_pressure;
 extern float q[4];
 
-extern void MadgwickQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz);
+extern void filterUpdate(float w_x, float w_y, float w_z, float a_x, float a_y, float a_z, float m_x, float m_y, float m_z);
 extern float get_declination(float lat, float lon);
 extern void sensor_9dof_configure();
 extern void sensor_9dof_read();
