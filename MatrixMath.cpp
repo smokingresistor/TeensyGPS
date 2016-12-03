@@ -121,7 +121,7 @@ int MatrixMath::Invert(float* A, int n)
 {
     // A = input matrix AND result matrix
     // n = number of rows = number of columns in A (n x n)
-    int pivrow;     // keeps track of current pivot row
+    int pivrow = 0; // keeps track of current pivot row
     int k,i,j;      // k: overall index along diagonal; i: row index; j: col index
     int pivrows[6]; // keeps track of rows swaps to undo at end
     float tmp;      // used for finding max value and making column swaps

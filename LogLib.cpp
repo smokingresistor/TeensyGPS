@@ -7,9 +7,9 @@ int mosi = 7;
 int miso = 8;
 int sck = 14;
 
-
 Sd2Card card;
 File dataFile;
+
 boolean sd_datalog = 1;
 boolean log_output;
 boolean parse_success;
@@ -116,10 +116,8 @@ String PIT_name[6] =  {"pit_length",
                        "pit_acc",
                        "ir_beacon",
                        "gps_beacon"};
-char buffer[2500];
-PString tpvstring(buffer, sizeof(buffer));
-char buffer2[2500];
-PString attstring(buffer2, sizeof(buffer2));
+char buffer[1024];
+PString datastring(buffer, sizeof(buffer));
 char res[21];
 
 static int num_cycle = 0;
@@ -196,7 +194,7 @@ void read_EEPROM() {
 void parseJSON() {
     char data, configData[number_JSON_object][500];
     int j = 0;
-    int i = 0;
+    unsigned int i = 0;
     int len[number_JSON_object];
     dataFile = SD.open(nameConfig, FILE_READ);
     if (dataFile){
@@ -300,28 +298,28 @@ void parseJSON() {
 void printJSON(){
     Serial.print("CNF");
     Serial.print(" ");
-    for (int i = 0; i < sizeof(CNF)/4; i++){
+    for (unsigned int i = 0; i < sizeof(CNF)/4; i++){
         Serial.print(CNF[i]);
         Serial.print(" ");
     };
     Serial.println();
     Serial.print("TPV");
     Serial.print(" ");
-    for (int i = 0; i < sizeof(TPV); i++){
+    for (unsigned int i = 0; i < sizeof(TPV); i++){
         Serial.print(TPV[i]);
         Serial.print(" ");
     };
     Serial.println();
     Serial.print("ATT");
     Serial.print(" ");
-    for (int i = 0; i < sizeof(ATT); i++){
+    for (unsigned int i = 0; i < sizeof(ATT); i++){
         Serial.print(ATT[i]);
         Serial.print(" ");
     };
     Serial.println();
     Serial.print("Canbus output enabled on frames:");
     Serial.print(" ");
-    for (int i = 0; i < NUM_CAN_FRAME; i++){
+    for (unsigned int i = 0; i < NUM_CAN_FRAME; i++){
         if (CAN[i].en){
         Serial.print(i);
         Serial.print(":");
@@ -332,7 +330,7 @@ void printJSON(){
     Serial.println();
     Serial.print("FLS");
     Serial.println(" ");
-    for (int i = 0; i < 3; i++){
+    for (unsigned int i = 0; i < 3; i++){
         if (FLS[i].en)
             Serial.print("     ");
             Serial.print(FLS_name[i]);
@@ -354,7 +352,7 @@ void printJSON(){
     };
     Serial.print("PIT");
     Serial.println(" ");
-    for (int i = 0; i < 1; i++){
+    for (unsigned int i = 0; i < 1; i++){
         Serial.print("     ");
         Serial.print(PIT[i].pit_length, 7);
         Serial.print(" ");
@@ -429,6 +427,7 @@ void LogSetup() {
         log_output = CNF[0];
     if (log_output)
         create_newlog();
+        datastring.begin();
  }//if 
  
 }
@@ -450,11 +449,11 @@ void create_newlog(){
     dataFile = SD.open(namefile, FILE_WRITE);           
     delay(100);
     if (dataFile){
-        for (int i = 0; i < sizeof(TPV); i++){
+        for (unsigned int i = 0; i < sizeof(TPV); i++){
            header = header + check_TPV(i);
         }
         header = "class," + header + "class,";
-        for (int i = 0; i < sizeof(ATT); i++){
+        for (unsigned int i = 0; i < sizeof(ATT); i++){
            header = header + check_ATT(i);
         }
         dataFile.println(header);
@@ -475,8 +474,8 @@ void dataFloat(float value, int mode){
     dtostrf(value, 20, 12, outstr);
     char* str_without_space = del_space(outstr);
     if (gps.venus838data_raw.fixmode >= mode)
-        tpvstring.print (str_without_space);
-    tpvstring.print(",");
+        datastring.print (str_without_space);
+    datastring.print(",");
 }
 
 /// \fn dataFloatATT
@@ -487,8 +486,8 @@ void dataFloatATT(float value, int mode){
     dtostrf(value, 20, 12, outstr);
     char* str_without_space = del_space(outstr);
     if (gps.venus838data_raw.fixmode >= mode)
-        attstring.print (str_without_space);
-    attstring.print(",");
+        datastring.print (str_without_space);
+    datastring.print(",");
 }
 
 /// \del_space
@@ -508,24 +507,23 @@ char* del_space(char* src){
 /// \brief Print TPV data to tpvstring \n
 /// 
 void LogTPV(){
-     tpvstring.begin();
-     Serial.println("Print TPV object"); 
+     //Serial.println("Print TPV object"); 
      if (!dataFile) 
           dataFile = SD.open(namefile, O_WRITE);
-      tpvstring.print("TPV,");
+      datastring.print("TPV,");
       if(TPV[0])
-          tpvstring.print("Venus838,");    
+          datastring.print("Venus838,");    
       if(TPV[1]){
-          tpvstring.print(gps.venus838data_raw.fixmode);
-          tpvstring.print(",");   
+          datastring.print(gps.venus838data_raw.fixmode);
+          datastring.print(",");   
       };
       if(TPV[2]){
-          tpvstring.print(gps.venus838data_raw.NumSV);
-          tpvstring.print(",");  
+          datastring.print(gps.venus838data_raw.NumSV);
+          datastring.print(",");  
       };
       if(TPV[3]){
-          tpvstring.print(UTC_Time);
-          tpvstring.print(",");
+          datastring.print(UTC_Time);
+          datastring.print(",");
       };
       if(TPV[4])
           dataFloat(gps.venus838data_raw.Latitude, 1);
@@ -556,17 +554,16 @@ void LogTPV(){
       if(TPV[17])
           dataFloat(gps.venus838data_raw.tdop, 0); 
       if(TPV[18]){
-          tpvstring.print(checksums);  
-          tpvstring.print(",");
+          datastring.print(checksums);  
+          datastring.print(",");
       };
-      dataFile.print(tpvstring);
+      //dataFile.print(datastring);
 }
 
 /// \fn LogATT
 /// \brief Print ATT data to attstring \n
 /// 
 void LogATT(){
-    attstring.begin();
     att.heading = heading;
     att.pitch = pitch;
     att.yaw = yaw_rate;
@@ -589,15 +586,15 @@ void LogATT(){
     att.quat4 = q[3];
     att.temp = temp;
     att.pressure = bmp280_pressure;
-    Serial.println("Print ATT object"); 
+   // Serial.println("Print ATT object"); 
     if (!dataFile) 
          dataFile = SD.open(namefile, O_WRITE);
-    attstring.print("ATT,");
+    datastring.print("ATT,");
     if(ATT[0])
-        attstring.print("LSM9DS0TR,");
+        datastring.print("LSM9DS0TR,");
     if(ATT[1]){
-        attstring.print(UTC_Time);
-        attstring.print(",");
+        datastring.print(Delta_Time);
+        datastring.print(",");
     };
     if(ATT[2])
         dataFloatATT(att.heading, 0);
@@ -644,13 +641,15 @@ void LogATT(){
     if(ATT[23])
         dataFloatATT(att.pressure, 0);
     num_cycle =  num_cycle + 1;
-    dataFile.print(attstring);
-    dataFile.println();
-    if (num_cycle % 2 == 0){
+    datastring.println(); 
+    dataFile.print(datastring);
+    datastring.begin();
+    if (num_cycle % 50 == 0){ //close file per 1 sec
         filesize = dataFile.size();
         dataFile.close();
         Serial.println("Datafile Saved");
         Serial.println(filesize);
+        
     }
 }
 
@@ -659,7 +658,6 @@ void LogATT(){
 /// 
 void LogATT_nosd()
 {
-    attstring.begin();
     att.heading = heading;
     att.pitch = pitch;
     att.yaw = yaw;
@@ -873,5 +871,18 @@ String null_add(int value){
   else 
      null = "";
   return null;
+}
+
+String GetDeltaTime(float time){
+  unsigned int time_ms, time_sec, time_min, time_hour;
+  time_ms = (int(time) % 1000)/10;
+  time_sec = time / 1000;
+  time_min = time_sec / 60;
+  time_sec = time_sec % 60;
+  time_hour = time_min / 60;
+  time_min = time_min % 60;
+  Delta_Time = null_add(time_hour) + String(time_hour) + ':' + null_add(time_min) + String(time_min) + ':' +
+  null_add(time_sec) + String(time_sec) + ':' + null_add(time_ms) + String(time_ms);
+  return Delta_Time;
 }
 

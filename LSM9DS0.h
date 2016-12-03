@@ -4,6 +4,7 @@
 #include <SPI.h> // Included for SFE_LSM9DS0 library
 #include <Wire.h>
 #include "BMsg838.h"
+#include "NXPMotionSense.h"
 
 #define ACC_SCALE 1000
 #define YAW_SCALE 100
@@ -12,8 +13,8 @@ extern BMsg838 gps;
 extern int INT1XM;
 extern int INT2XM;
 extern int DRDYG;
-extern float ax, ay, az, gx, gy, gz, mx, my, mz; 
-extern float heading, roll, pitch, yaw, temp, inclination, yaw_rate; 
+extern float ax, ay, az, gx, gy, gz, mx, my, mz, x, y, z; 
+extern float heading, roll, pitch, yaw, temp, inclination, yaw_rate, prev_yaw; 
 extern float bmp280_pressure;
 extern float q[4];
 
