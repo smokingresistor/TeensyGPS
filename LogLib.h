@@ -145,7 +145,7 @@ struct pt{
 const double EPS = 1E-9;
 
 extern float ax, ay, az, gx, gy, gz, mx, my, mz; 
-extern float heading, roll, pitch, yaw, temp, inclination, yaw_rate;
+extern float heading, roll, pitch, yaw, temperature, inclination, yaw_rate;
 extern float bmp280_pressure;
 extern float q[4];
 extern struct DOF_DATA att;

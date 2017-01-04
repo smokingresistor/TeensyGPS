@@ -91,7 +91,7 @@ struct PIT_DATA PIT[1];
 
 /*variables for 9dof data*/
 float ax, ay, az, gx, gy, gz, mx, my, mz, x, y, z; // variables to hold latest sensor data values 
-float heading, roll, pitch, yaw, temp, inclination, lap_distance; 
+float heading, roll, pitch, yaw, temperature, inclination, lap_distance; 
 float yaw_rate, prev_yaw;
 float bmp280_pressure;
 float q[4] = {1.0f, 0.0f, 0.0f, 0.0f};    // vector to hold quaternion
@@ -304,6 +304,7 @@ void setup()
 void loop()
 {
   int ret=0;
+  float temp;
   char messagetype[64];
   memset(messagetype,0,64);
   // Open file for logging

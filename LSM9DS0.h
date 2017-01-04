@@ -14,7 +14,7 @@ extern int INT1XM;
 extern int INT2XM;
 extern int DRDYG;
 extern float ax, ay, az, gx, gy, gz, mx, my, mz, x, y, z; 
-extern float heading, roll, pitch, yaw, temp, inclination, yaw_rate, prev_yaw; 
+extern float heading, roll, pitch, yaw, temperature, inclination, yaw_rate, prev_yaw; 
 extern float bmp280_pressure;
 extern float q[4];
 

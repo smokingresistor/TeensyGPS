@@ -274,6 +274,8 @@ void filterUpdate(float w_x, float w_y, float w_z, float a_x, float a_y, float a
 /// 
 void sensor_9dof_read()
 {
+  uint16_t static now_time, prev_time;
+  float static prev_yaw;
   //Serial.println(millis());
   float declination;
   if(digitalRead(DRDYG)){
@@ -302,7 +304,7 @@ void sensor_9dof_read()
   my = x * mag_softiron_matrix[1][0] + y * mag_softiron_matrix[1][1] + z * mag_softiron_matrix[1][2];
   mz = x * mag_softiron_matrix[2][0] + y * mag_softiron_matrix[2][1] + z * mag_softiron_matrix[2][2];
   dof.readTemp();
-  temp = 21.0 + (float) dof.temperature/8.0;
+  temperature = 21.0 + (float) dof.temperature/8.0;
   //Normalize accelerometer raw values.
   float accXnorm = ax/sqrt(pow(ax,2) + pow(ay,2) + pow(az,2));
   float accYnorm = ay/sqrt(pow(ax,2) + pow(ay,2) + pow(az,2));
@@ -340,6 +342,12 @@ void sensor_9dof_read()
   if (magZcomp < 0)
      inclination = - inclination;
   print_9dof_data();
+  now_time = millis();
+  yaw_rate = (yaw-prev_yaw)*1000/(now_time - prev_time);
+//  Serial.println(yaw_rate);
+//  Serial.println(now_time - prev_time);
+  prev_time = now_time;
+  prev_yaw = yaw;
 }
 
 /// \fn print_9dof_data
@@ -361,7 +369,7 @@ void print_9dof_data()
   Serial.print("  \tZ: "); Serial.print(gz, 3);   Serial.println("  \tdps");
 
   // print out temperature data
-  Serial.print("Temp: "); Serial.print(temp); Serial.println(" *C");
+  Serial.print("Temp: "); Serial.print(temperature); Serial.println(" *C");
 
   // 'orientation' should have valid .roll and .pitch fields 
   Serial.println(F("Orientation: "));

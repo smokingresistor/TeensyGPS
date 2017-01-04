@@ -584,7 +584,7 @@ void LogATT(){
     att.quat2 = q[1];
     att.quat3 = q[2];
     att.quat4 = q[3];
-    att.temp = temp;
+    att.temp = temperature;
     att.pressure = bmp280_pressure;
    // Serial.println("Print ATT object"); 
     if (!dataFile) 
@@ -660,7 +660,7 @@ void LogATT_nosd()
 {
     att.heading = heading;
     att.pitch = pitch;
-    att.yaw = yaw;
+    att.yaw = yaw_rate;
     att.roll = roll;
     att.dip = inclination;
     att.mag_len = sqrt(sq(mx)+sq(my)+sq(mz));
@@ -678,7 +678,7 @@ void LogATT_nosd()
     att.quat2 = q[1];
     att.quat3 = q[2];
     att.quat4 = q[3];
-    att.temp = temp;
+    att.temp = temperature;
     att.pressure = bmp280_pressure;
 }
 
